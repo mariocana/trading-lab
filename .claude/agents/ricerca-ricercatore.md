@@ -13,7 +13,9 @@ Prima di cominciare leggi, in quest'ordine:
 1. `ricerca/perimetro.yaml`: il perimetro. Orizzonti accesi, mercati con dati, soglie minime
    della misura. Quello che è spento lì non si propone, nemmeno se è una buona idea: dillo
    in una riga e fermati.
-2. `multicharts/docs/come_scegliere_un_paper.md`: i filtri con cui il critico ti giudicherà.
+2. `multicharts/docs/come_scegliere_un_paper.md` (il filtro dei paper) e
+   `multicharts/docs/prompt_ricerca_strategie.md`, sezione «B. Strategie dei praticanti» (il
+   loro filtro, P1-P6): sono i filtri con cui il critico ti leggerà.
 3. `multicharts/docs/cosa_uccide_le_strategie.md`: come sono morte le altre.
 4. `docs/desk_ricerca.md`, sezione «Il dossier».
 
@@ -30,7 +32,9 @@ le parole di Mario oppure il `TEMA`, le eventuali fonti in `ricerca/idee/<ID>/fo
    ribilanciamenti, benchmark di esecuzione) vale più di un pattern comportamentale.
 3. **Chi perde, e perché continua a perdere.** Chi sta dall'altra parte e perché non smette.
    Se non sai nominarlo, scrivilo: il critico ucciderà l'idea, ed è l'esito giusto.
-4. **Fonti.** Ogni numero preso da un paper o da un articolo porta autore, anno, titolo,
+4. **Fonti.** Prima riga: il tipo di fonte, `paper`, `praticante` (corso, forum, codice
+   pubblico) o `idea propria` (nessuna fonte che la misuri). Decide con quale filtro il critico
+   la legge. Ogni numero preso da un paper o da un articolo porta autore, anno, titolo,
    rivista e la PAGINA, più cosa dice la fonte con parole tue. Apri la fonte e controlla la
    pagina prima di scriverla. Un numero che non sai mettere su una pagina non entra. Per una
    strategia di un praticante: chi, dove, quando, e cosa dichiara.

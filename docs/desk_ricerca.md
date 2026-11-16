@@ -1,7 +1,8 @@
 # Il laboratorio come desk di ricerca (12/11/2026)
 
 **Stato: costruito il 12/11/2026, provato il 13/11 su quattro idee note.** La misura e il coder
-reggono; il critico no: ha ucciso anche l'unica strategia viva (sezione «Il giro di prova»). Segue l'[audit del 12/11](audit_2026-11-12.md) e la
+reggono; il critico ha ucciso anche l'unica strategia viva ed è stato corretto il 16/11, senza
+una seconda prova (sezione «Il giro di prova»). Segue l'[audit del 12/11](audit_2026-11-12.md) e la
 decisione di Mario di portare le strategie in live con MultiCharts e la pipeline live di
 multicharts (`pipeline_live.md`, ancora in bozza). L'esecuzione ha tre vie: broker futures, bridge
 MT5 e, se si vuole, bridge verso il desk Hyperliquid.
@@ -100,7 +101,7 @@ sono altre quattro.
 |---|---|---|---|
 | 1 | `/ricerca` | nome, orizzonte e mercato dell'idea; cosa è già stato fatto (`lab.py cerca`) | cartella e voce `idea` nel registro, o un rifiuto se è fuori perimetro |
 | 2 | `ricerca-ricercatore` | ipotesi falsificabile, meccanismo, chi perde, fonti con pagina, regola eseguibile, soglia della misura | `hypothesis.md` |
-| 3 | `ricerca-critico` | riapre le fonti, applica i filtri eliminatori, fa il conto frequenza × edge contro i costi | `critique.md`: GO o KILL |
+| 3 | `ricerca-critico` | riapre le fonti, applica il filtro del tipo di fonte, fa il conto frequenza × edge contro i costi | `critique.md`: GO o KILL, con una riga `RISERVA` |
 | 4 | `ricerca-coder` | scrive la regola come strategia Python del motore, senza vedere numeri | `multicharts/motore/strategie/<id>.py` |
 | 5 | codice | la misura sull'in-sample, contata nel registro | `misura.json`, SOPRA o SOTTO SOGLIA |
 | 6 | `/ricerca` | mette in fila ipotesi, critica e misura | `dossier.md` |
@@ -312,22 +313,24 @@ La misura è stata lanciata anche dopo un KILL, come diagnosi: nel flusso vero u
   all'apertura della dopo), e quando stop e target cadono nello stesso minuto decide con il
   percorso della barra, non «vince lo stop».
 
-**Cosa cambiare nel critico, da decidere.** Correggerlo guardando queste quattro idee è
-adattarlo a un campione di quattro: va fatto con poche regole e una ragione per ciascuna.
+**Il critico dopo la prova (16/11/2026).** Corretto guardando quattro idee: va riprovato su
+idee diverse, e fino ad allora la correzione è un'ipotesi.
 
-| | proposta | perché |
+| | regola | perché |
 |---|---|---|
-| 1 | KILL solo per ragioni dure: fuori perimetro, regola non eseguibile, conto dei costi che non passa nemmeno nel caso favorevole | sono le ragioni che la misura non può smentire |
-| 2 | fonti deboli, nessun flusso obbligato, nessuno che perde: diventano i punti deboli nel dossier, non un KILL | la misura costa minuti e decide meglio; DriftPullback li ha tutti e tre |
-| 3 | un filtro a parte per le strategie dei praticanti | quello dei paper le uccide tutte, e l'unica viva è una di loro |
-| 4 | fonte non apribile = «non verificata», mai KILL da sola | altrimenti decide cosa c'è nel repository, non cosa dice la fonte |
+| 1 | KILL solo per ragioni dure: fuori perimetro, regola non eseguibile, conto dei costi che non passa nemmeno nel caso favorevole, dati che non abbiamo, variante non dichiarata | sono le ragioni che la misura non può smentire |
+| 2 | fonti deboli, nessun flusso obbligato, nessuno che perde: punti deboli nel dossier, non un KILL | la misura costa minuti e decide meglio; DriftPullback li ha tutti e tre |
+| 3 | il filtro dipende dal tipo di fonte: quello dei paper, quello dei praticanti (P1-P6 di `prompt_ricerca_strategie.md`), nessuno per un'idea propria | quello dei paper uccide tutti i praticanti, e l'unica viva è una di loro |
+| 4 | «non verificato» è un esito a sé, diverso da «no»: una fonte che non si apre non uccide | altrimenti decide cosa c'è nel repository, non cosa dice la fonte |
+| 5 | una riga `RISERVA`: se manca una voce che il filtro chiama eliminatoria, il desk chiede a Mario prima di spendere una misura | i tuoi eliminatori restano una decisione tua, non un automatismo |
 
-Il costo della proposta: più idee arrivano alla misura, e ogni misura conta nel totale che alza
-la soglia t. Il tetto mensile serve a questo.
+Il costo: più idee arrivano alla misura, e ogni misura conta nel totale che alza la soglia t. Il
+tetto mensile e la riga `RISERVA` servono a questo.
 
 ## Cosa manca
 
-1. **Correggere il critico** come sopra, e rifare il giro su idee diverse da queste quattro.
+1. **Riprovare il critico corretto** su idee diverse dalle quattro della prova: almeno una viva
+   (Overnight Bias) e due morte per ragioni diverse.
 2. **La misura per daily e swing**, il giorno in cui si accendono.
 3. **Il conto delle idee dentro `lab.py`**, se si decide di non leggerlo a mano.
 4. **Due cose nel motore**, se servono: l'ordine «alla chiusura di questa barra» e la regola

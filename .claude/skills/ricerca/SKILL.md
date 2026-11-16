@@ -34,7 +34,7 @@ Le idee di Mario hanno la precedenza sul tetto mensile.
 |---|---|---|---|
 | 1 | tu | nome dell'idea (`minuscole_con_trattini_bassi`), orizzonte e mercato. `python3 multicharts/docs/lab.py cerca <2-4 parole>` per sapere cosa è già stato fatto: è `GIA_FATTO`. Poi il comando sotto | cartella e voce `idea` nel registro |
 | 2 | `ricerca-ricercatore` | ipotesi, meccanismo, chi perde, fonti con pagina, regola eseguibile, soglia | `hypothesis.md` |
-| 3 | `ricerca-critico` | fonti riaperte, filtri, conto dei costi | `critique.md`: GO o KILL |
+| 3 | `ricerca-critico` | fonti riaperte, il filtro del tipo di fonte, conto dei costi | `critique.md`: GO o KILL, e una riga `RISERVA` |
 | 4 | `ricerca-coder` | la regola come strategia del motore | `multicharts/motore/strategie/<id>.py` |
 | 5 | tu | la misura sull'in-sample, registrata | `misura.json`, SOPRA o SOTTO SOGLIA |
 | 6 | tu | il dossier | `dossier.md` |
@@ -52,6 +52,13 @@ file `link.txt`) prima di chiamare il ricercatore.
 
 **Fermati dopo i passi 3, 5 e 6** e di' a Mario l'esito in parole semplici.
 
+- **Il critico uccide solo per ragioni dure**: fuori perimetro, regola non eseguibile, conto
+  dei costi che non passa nemmeno nel caso favorevole, dati che non abbiamo, variante non
+  dichiarata. Fonti deboli, nessun flusso obbligato e nessuno che perde sono punti deboli, non
+  un KILL: se trovi un KILL motivato così, rimandalo al critico.
+- **GO con `RISERVA: sì`**: manca una voce che il filtro chiama eliminatoria. Fermati e chiedi a
+  Mario se vuole spendere una misura (conta nel tetto mensile e nel totale delle idee). Se dice
+  no: `poetry run ricerca kill <id> --step user --reason "<la riserva>"`.
 - **KILL al passo 3** chiude l'idea:
   `poetry run ricerca kill <id> --step critic --reason "<la ragione del critico>"`.
   Se Mario non è d'accordo, la strada è un'idea nuova con `--parent`, mai un secondo giro.
