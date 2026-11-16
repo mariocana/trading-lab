@@ -1,4 +1,4 @@
-> Idea di Mario: la SPEC pre-registrata il 10/11/2026 in multicharts/strategies/MondayLong/SPEC.md, scritta prima di qualsiasi run. La strategia non e mai stata girata. La regola da misurare e questa, senza varianti.
+> Idea di Mario: la SPEC pre-registrata il 10/11/2026 in multicharts/strategies/MondayLong/SPEC.md, scritta prima di qualsiasi run in MultiCharts. Questa regola, con lo stop e senza i festivi, non e mai stata girata; il 10/11 era stata guardata sull in-sample una versione senza stop e con i festivi. La regola da misurare e questa, senza varianti.
 
 # SPEC — MondayLong, ES → MES (Stage 0, 10/11/2026)
 
