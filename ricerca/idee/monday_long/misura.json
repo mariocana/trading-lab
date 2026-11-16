@@ -1,0 +1,30 @@
+{
+  "trade": 231,
+  "giorni": 1299,
+  "trade_al_giorno": 0.17782909930715934,
+  "wr": 0.5930735930735931,
+  "rr": 0.9895723999737286,
+  "null": 0.5026205630984851,
+  "eccesso_pp": 9.045302997510795,
+  "errore_standard_pp": 3.289713290636552,
+  "errori_standard": 2.7495718314590722,
+  "media_per_trade": 279.7943722943723,
+  "t": 2.0999141921402624,
+  "dollari_al_giorno_per_micro": 4.975558121632025,
+  "strategia": "monday_long",
+  "simbolo": "ES",
+  "periodo": [
+    "2020-01-01",
+    "2024-12-31"
+  ],
+  "commissione_per_lato": 15.0,
+  "parametri": {
+    "EntryTime": 1900,
+    "ExitTime": 1555,
+    "SessEnd": 1600,
+    "StopPts": 90,
+    "TargetPts": 100,
+    "NumContracts": 1
+  },
+  "misurata_il": "2026-11-16"
+}
