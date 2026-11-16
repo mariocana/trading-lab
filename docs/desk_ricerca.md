@@ -1,8 +1,8 @@
 # Il laboratorio come desk di ricerca (12/11/2026)
 
 **Stato: costruito il 12/11/2026, provato il 13/11 su quattro idee note.** La misura e il coder
-reggono; il critico ha ucciso anche l'unica strategia viva ed è stato corretto il 16/11, senza
-una seconda prova (sezione «Il giro di prova»). Segue l'[audit del 12/11](audit_2026-11-12.md) e la
+reggono su sette idee note. Il critico, corretto dopo la prima prova, non uccide più le strategie
+vive ma non filtra quasi niente (sezioni «Il giro di prova» e «La seconda prova»). Segue l'[audit del 12/11](audit_2026-11-12.md) e la
 decisione di Mario di portare le strategie in live con MultiCharts e la pipeline live di
 multicharts (`pipeline_live.md`, ancora in bozza). L'esecuzione ha tre vie: broker futures, bridge
 MT5 e, se si vuole, bridge verso il desk Hyperliquid.
@@ -327,11 +327,59 @@ idee diverse, e fino ad allora la correzione è un'ipotesi.
 Il costo: più idee arrivano alla misura, e ogni misura conta nel totale che alza la soglia t. Il
 tetto mensile e la riga `RISERVA` servono a questo.
 
+## La seconda prova, con il critico corretto (16/11/2026)
+
+Tre idee diverse dalle prime quattro, stesse regole: agenti alla cieca, registro di prova,
+cartelle in `ricerca/idee/prova2_*`.
+
+| idea | fonte | esito vero | critico | misura | misura contro il noto |
+|---|---|---|---|---|---|
+| Overnight Bias | praticante | **viva** | GO, riserva sì | **sopra soglia**: +12,96 pp, 5,62 errori standard, $14,06 al giorno | strategia già calibrata nel motore |
+| ORB Breakout (base) | praticante | morta: la base al Gate 2, la variante fuori campione | GO, riserva sì | **sotto soglia**: +2,53 pp, 1,45 errori standard, $4,39 al giorno | 822 trade, t 1,19 |
+| Last Half-Hour | paper | morta al Gate 2 | GO, riserva sì | **sotto soglia**: +1,24 pp, 0,87 errori standard, $1,57 al giorno | 1.249 trade, t 0,58. Il report MC: 1.247 trade, t 0,52 |
+
+**Sulle due prove insieme, sette idee:**
+
+- **La misura ha dato l'esito giusto su sei idee misurate su sei**: quattro morte sotto soglia,
+  due vive sopra.
+- **Il coder ha rifatto due report MultiCharts da una regola in prosa**: NQ First5 con 1.291
+  trade su 1.291, Last Half-Hour con 1.249 su 1.247 e t 0,58 contro 0,52.
+- **Il critico corretto non uccide più la strategia viva**, e i suoi punti deboli sono giusti:
+  su ORB ha scritto che la regola è solo long su un periodo in cui NQ sale e che il nostro
+  in-sample copre quello del corso. È il motivo per cui ORB è poi morta fuori campione.
+
+**Cosa la seconda prova dice del critico.**
+
+- **Ora non filtra quasi niente.** Tre GO su tre. In sette idee una sola ragione dura (VWAP
+  Pullback, conto dei costi), e quella il critico corretto non l'ha rivista.
+- **La riga `RISERVA` non distingue**: «sì» su tutte e tre, compresa quella viva. Con fonti che
+  non si aprono è sempre «sì», quindi il desk si fermerebbe a chiedere ogni volta.
+- **Quindi ogni idea arriva alla misura e consuma un posto.** Le due prove ne hanno consumati
+  sei su otto, nel registro di prova. Il tetto mensile è il vero filtro, non il critico.
+- **Il critico vale per il dossier**, non per la selezione: dice cosa guardare quando la
+  misura passa.
+
+**Una cosa da cambiare nel perimetro.** `segnali_al_giorno_min: 1` contraddice i fatti:
+Overnight Bias fa 0,35 trade al giorno ed è viva, perché porta $14 al giorno per micro. Il
+vincolo vero è il minimo in dollari al giorno; il minimo di segnali è un doppione più severo.
+Oggi non fa danni solo perché il critico corretto guarda il massimo di trade che la regola
+permette e non la media.
+
+**Limiti.**
+
+- Sette idee, tutte su NQ, tutte intraday.
+- Per le due strategie vive la misura ha usato il codice già calibrato, non quello di un coder.
+- Il critico di Last Half-Hour ha visto per errore una riga con l'esito dell'idea e lo ha
+  dichiarato.
+- La misura dice se c'è un edge in-sample. ORB con la variante giusta in-sample passava (t 2,8)
+  ed è morta dopo: quel tipo di morte resta al fuori campione della pipeline.
+
 ## Cosa manca
 
-1. **Riprovare il critico corretto** su idee diverse dalle quattro della prova: almeno una viva
-   (Overnight Bias) e due morte per ragioni diverse.
-2. **La misura per daily e swing**, il giorno in cui si accendono.
-3. **Il conto delle idee dentro `lab.py`**, se si decide di non leggerlo a mano.
-4. **Due cose nel motore**, se servono: l'ordine «alla chiusura di questa barra» e la regola
+1. **Decidere cosa fare del critico**: tenerlo com'è (scrive il dossier, uccide solo sui
+   conti), oppure togliere la riga `RISERVA`, che non distingue.
+2. **Togliere o abbassare `segnali_al_giorno_min`** nel perimetro.
+3. **La misura per daily e swing**, il giorno in cui si accendono.
+4. **Il conto delle idee dentro `lab.py`**, se si decide di non leggerlo a mano.
+5. **Due cose nel motore**, se servono: l'ordine «alla chiusura di questa barra» e la regola
    prudente quando stop e target cadono nello stesso minuto.

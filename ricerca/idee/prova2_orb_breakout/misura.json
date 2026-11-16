@@ -1,0 +1,31 @@
+{
+  "trade": 822,
+  "giorni": 1299,
+  "trade_al_giorno": 0.6327944572748267,
+  "wr": 0.5535279805352799,
+  "rr": 0.893191626299817,
+  "null": 0.5282085479928242,
+  "eccesso_pp": 2.531943254245561,
+  "errore_standard_pp": 1.7411726542545407,
+  "errori_standard": 1.454159785968829,
+  "media_per_trade": 69.42214111922141,
+  "t": 1.1875868064256654,
+  "dollari_al_giorno_per_micro": 4.3929946112394145,
+  "strategia": "prova2_orb_breakout",
+  "simbolo": "NQ",
+  "periodo": [
+    "2020-01-01",
+    "2024-12-31"
+  ],
+  "commissione_per_lato": 7.5,
+  "parametri": {
+    "RangeStart": 835,
+    "RangeEnd": 900,
+    "SetupStart": 905,
+    "SetupEnd": 1350,
+    "FlatTime": 1400,
+    "TargetR": 1.0,
+    "NumContracts": 1
+  },
+  "misurata_il": "2026-11-16"
+}

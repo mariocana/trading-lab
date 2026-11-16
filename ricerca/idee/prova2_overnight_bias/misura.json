@@ -1,0 +1,43 @@
+{
+  "trade": 455,
+  "giorni": 1299,
+  "trade_al_giorno": 0.35026943802925325,
+  "wr": 0.5384615384615384,
+  "rr": 1.4455237200563644,
+  "null": 0.4089103662331077,
+  "eccesso_pp": 12.955117222843072,
+  "errore_standard_pp": 2.304809489494052,
+  "errori_standard": 5.620905884801331,
+  "media_per_trade": 401.4945054945055,
+  "t": 4.507281279530242,
+  "dollari_al_giorno_per_micro": 14.063125481139338,
+  "strategia": "obo",
+  "simbolo": "NQ",
+  "periodo": [
+    "2020-01-01",
+    "2024-12-31"
+  ],
+  "commissione_per_lato": 7.5,
+  "parametri": {
+    "SessStart": 830,
+    "OREnd": 845,
+    "LastEntry": 1200,
+    "FlatTime": 1430,
+    "SessEnd": 1500,
+    "MaxTradesPerDay": 4,
+    "BiasLongMin": 0.67,
+    "BiasShortMax": 0.33,
+    "ADXLen": 16,
+    "ADXMin": 20,
+    "BreakSkipMult": 2.5,
+    "BarAvgLen": 20,
+    "MinORx": 0,
+    "MaxORx": 2,
+    "ORMedianDays": 20,
+    "ATR_k": 0.3,
+    "ATR_Days": 15,
+    "TakeProfitRR": 3,
+    "NumContracts": 1
+  },
+  "misurata_il": "2026-11-16"
+}
