@@ -129,7 +129,8 @@ leggono gli agenti e lo fa rispettare il codice.
 | Orizzonti | **intraday acceso**; daily e swing spenti | `ricerca idea` rifiuta un orizzonte spento |
 | Vincoli dell'orizzonte | intraday: flat a fine giornata | il critico |
 | Mercati | NQ ed ES (hanno lo storico a 1 minuto); GC, CL e BTC senza dati | `ricerca idea` rifiuta un mercato senza dati |
-| Minimi della misura | eccesso ad almeno 3 errori standard, almeno $10 al giorno per micro | `ricerca measure` stampa SOPRA o SOTTO SOGLIA |
+| Destinazioni | `prop` e `live`, scelta alla nascita dell'idea; `prop` se non la dici | `ricerca idea` rifiuta una destinazione sconosciuta |
+| Minimi della misura | dipendono dalla destinazione, vedi sotto | `ricerca measure` stampa SOPRA o SOTTO SOGLIA |
 | Tetto mensile | 8 idee nuove alla misura, dalle due porte insieme | `ricerca measure` rifiuta la nona |
 
 - **Per accendere daily o swing non basta cambiare `attivo`.** Serve anche una misura per
@@ -138,6 +139,29 @@ leggono gli agenti e lo fa rispettare il codice.
   mancante, `ricerca idea` rifiuta lo stesso.
 - **Un perimetro cambiato vale per le idee nuove.** Quelle già nel registro restano con
   l'orizzonte e il mercato del loro giorno.
+
+### Le destinazioni (aggiunte il 17/11)
+
+Fino al 16/11 il desk aveva una sola coppia di minimi, pensata per la prop. Il perché della
+differenza è in [`prop_vs_live.md`](../multicharts/docs/prop_vs_live.md).
+
+| | `prop` | `live` |
+|---|---|---|
+| A cosa serve | una eval o un conto funded | soldi propri, anche in demo |
+| Errori standard | almeno 3,0 | almeno 3,0 |
+| Dollari al giorno per micro | almeno $10 | nessun minimo |
+| Media per trade | non guardata | stampata contro $7 per micro, non uccide |
+
+- **Cosa non cambia.** Orizzonti, mercati e tetto mensile sono gli stessi. Il live oggi resta
+  intraday e flat a fine giornata: per tenere una posizione overnight serve accendere daily, che
+  non ha ancora una misura.
+- **Cosa il desk non guarda nemmeno per il live.** Concentrazione per anno, robustezza al cambio
+  di regime e drawdown a cinque anni restano criteri di `/lab`, non della misura preliminare.
+- **Una destinazione per idea.** Non si cambia dopo la nascita: la stessa idea per l'altra
+  destinazione è un'idea nuova con `--parent`, e conta una misura in più. Le idee nate prima
+  del 17/11 (Monday Long) sono `prop`.
+- **Il minimo del live è una scelta da rivedere.** Togliere i dollari al giorno e tenere i 3
+  errori standard è il punto di partenza scelto il 17/11, non un numero derivato da un conto.
 
 ## Le due porte
 

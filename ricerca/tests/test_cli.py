@@ -20,7 +20,7 @@ def args(**kw):
         pass
     a = A()
     a.id, a.title, a.door, a.parent, a.step, a.reason = "fine_mese", "Flussi di fine mese", "user", None, None, None
-    a.horizon, a.market = "intraday", "NQ"
+    a.horizon, a.market, a.destination = "intraday", "NQ", "prop"
     for k, v in kw.items():
         setattr(a, k, v)
     return a
@@ -38,7 +38,8 @@ def test_un_idea_ha_una_cartella_e_una_riga_nel_registro(lab):
 
 
 def test_un_idea_fuori_perimetro_non_viene_registrata(lab):
-    for kw in ({"horizon": "daily"}, {"horizon": "swing"}, {"horizon": "scalping"}, {"market": "GC"}, {"market": "YM"}):
+    for kw in ({"horizon": "daily"}, {"horizon": "swing"}, {"horizon": "scalping"}, {"market": "GC"}, {"market": "YM"},
+               {"destination": "swing"}):
         with pytest.raises(SystemExit, match="fuori dal perimetro"):
             cli.cmd_idea(args(**kw))
     assert reg.Registry().ideas() == [] and not (lab / "idee" / "fine_mese").exists()
@@ -75,7 +76,7 @@ def test_il_tetto_mensile_ferma_le_idee_nuove_ma_non_un_rilancio(lab):
     cli.cmd_measure(args(id="idea_0"))                 # già misurata: un rilancio, non uno sguardo nuovo
 
 
-def test_i_minimi_sono_gli_stessi_per_ogni_idea(lab, capsys):
+def test_i_minimi_sono_gli_stessi_per_ogni_idea_della_stessa_destinazione(lab, capsys):
     cli.cmd_idea(args())
     f = lab / "idee" / "fine_mese" / "misura.json"
     f.write_text(json.dumps(BUONA))
@@ -94,3 +95,36 @@ def test_un_idea_uccisa_e_chiusa_per_sempre(lab, capsys):
         cli.cmd_kill(args(step="user", reason="di nuovo"))
     cli.cmd_status(args())
     assert "uccisa (critic)" in capsys.readouterr().out
+
+
+POCHI_DOLLARI = {"errori_standard": 3.4, "dollari_al_giorno_per_micro": 4.0, "media_per_trade": 250.0}
+
+
+def test_la_destinazione_decide_i_minimi(lab, capsys):
+    cli.cmd_idea(args(id="da_prop"))
+    cli.cmd_idea(args(id="da_live", destination="live"))
+    for i in ("da_prop", "da_live"):
+        (lab / "idee" / i / "misura.json").write_text(json.dumps(POCHI_DOLLARI))
+    cli.cmd_measure(args(id="da_prop"))
+    out = capsys.readouterr().out
+    assert "destinazione prop: SOTTO SOGLIA" in out and "$ al giorno per micro" in out
+    cli.cmd_measure(args(id="da_live"))
+    out = capsys.readouterr().out
+    assert "destinazione live: SOPRA SOGLIA" in out
+    assert "da guardare, non uccide: media per trade $25.00 per micro" in out
+
+
+def test_il_live_non_abbassa_gli_errori_standard(lab, capsys):
+    cli.cmd_idea(args(destination="live"))
+    (lab / "idee" / "fine_mese" / "misura.json").write_text(
+        json.dumps({"errori_standard": 2.75, "dollari_al_giorno_per_micro": 4.98, "media_per_trade": 279.79}))
+    cli.cmd_measure(args())
+    assert "destinazione live: SOTTO SOGLIA: errori standard 2.75 < 3.0" in capsys.readouterr().out
+
+
+def test_un_idea_nata_prima_delle_destinazioni_e_prop(lab, capsys):
+    reg.Registry().register_idea("vecchia", "Senza destinazione", "user", horizon="intraday", market="NQ")
+    (lab / "idee" / "vecchia").mkdir(parents=True)
+    (lab / "idee" / "vecchia" / "misura.json").write_text(json.dumps(POCHI_DOLLARI))
+    cli.cmd_measure(args(id="vecchia"))
+    assert "destinazione prop: SOTTO SOGLIA" in capsys.readouterr().out

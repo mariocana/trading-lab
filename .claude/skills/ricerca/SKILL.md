@@ -17,8 +17,8 @@ Lo stato vive in `ricerca/idee/<id>/`, una cartella per idea, e nel registro
 cd ricerca && poetry run ricerca status
 ```
 
-e con il perimetro, `ricerca/perimetro.yaml`: orizzonti accesi, mercati con dati, tetto
-mensile. Dillo a Mario in due righe.
+e con il perimetro, `ricerca/perimetro.yaml`: orizzonti accesi, mercati con dati, destinazioni,
+tetto mensile. Dillo a Mario in due righe.
 
 ## Le due porte
 
@@ -28,11 +28,20 @@ mensile. Dillo a Mario in due righe.
 Dal passo 2 in poi il percorso è identico, e il critico non sa da quale porta è entrata l'idea.
 Le idee di Mario hanno la precedenza sul tetto mensile.
 
+## La destinazione
+
+Ogni idea nasce per una destinazione, `prop` o `live` (`destinazioni:` in `perimetro.yaml`), e
+la destinazione decide con quali minimi si legge la misura. `prop` è una eval o un conto funded;
+`live` sono soldi propri, anche in demo. Se Mario non la dice, è `prop`: scrivilo nella riga in
+cui gli annunci l'idea, così può correggerti prima che parta. Non si cambia dopo la nascita:
+la stessa idea per l'altra destinazione è un'idea nuova con `--parent`, e una misura in più.
+Passa `DESTINAZIONE` al ricercatore e al critico.
+
 ## Il percorso
 
 | passo | chi | cosa | esce |
 |---|---|---|---|
-| 1 | tu | nome dell'idea (`minuscole_con_trattini_bassi`), orizzonte e mercato. `python3 multicharts/docs/lab.py cerca <2-4 parole>` per sapere cosa è già stato fatto: è `GIA_FATTO`. Poi il comando sotto | cartella e voce `idea` nel registro |
+| 1 | tu | nome dell'idea (`minuscole_con_trattini_bassi`), orizzonte, mercato e destinazione. `python3 multicharts/docs/lab.py cerca <2-4 parole>` per sapere cosa è già stato fatto: è `GIA_FATTO`. Poi il comando sotto | cartella e voce `idea` nel registro |
 | 2 | `ricerca-ricercatore` | ipotesi, meccanismo, chi perde, fonti con pagina, regola eseguibile, soglia | `hypothesis.md` |
 | 3 | `ricerca-critico` | fonti riaperte, il filtro del tipo di fonte, conto dei costi | `critique.md`: GO o KILL, e una riga `RISERVA` |
 | 4 | `ricerca-coder` | la regola come strategia del motore | `multicharts/motore/strategie/<id>.py` |
@@ -41,7 +50,7 @@ Le idee di Mario hanno la precedenza sul tetto mensile.
 | 7 | **Mario** | decide se vale una SPEC | il dossier passa a `/lab` |
 
 ```bash
-cd ricerca && poetry run ricerca idea <id> --title "<titolo>" --door user|researcher --horizon <orizzonte> --market <mercato> [--parent <id madre>]
+cd ricerca && poetry run ricerca idea <id> --title "<titolo>" --door user|researcher --horizon <orizzonte> --market <mercato> --destination prop|live [--parent <id madre>]
 ```
 
 Se il comando rifiuta (`fuori dal perimetro`), l'idea non esiste: dillo a Mario, con il motivo.
@@ -71,7 +80,8 @@ file `link.txt`) prima di chiamare il ricercatore.
   cd ricerca && poetry run ricerca measure <id>
   ```
 
-  Il secondo comando conta lo sguardo e stampa SOPRA o SOTTO SOGLIA contro i minimi di
+  Il secondo comando conta lo sguardo e stampa SOPRA o SOTTO SOGLIA contro i minimi che
+  la destinazione dell'idea ha in
   `perimetro.yaml`. Poi confronta tu la misura con la soglia che il ricercatore ha scritto
   nell'ipotesi, se era più severa. Se rifiuta per il tetto mensile, l'idea aspetta: non si
   misura in altro modo.

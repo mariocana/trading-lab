@@ -1,8 +1,10 @@
 """I comandi del desk di ricerca. Li chiama la skill /ricerca; il disegno è in docs/desk_ricerca.md.
 
-    ricerca idea <id> --title T --door user|researcher --horizon H --market M [--parent ID]
+    ricerca idea <id> --title T --door user|researcher --horizon H --market M
+                 [--destination prop|live] [--parent ID]
                                 un'idea esiste: una cartella in idee/ e una riga nel registro.
-                                Rifiutata se è fuori dal perimetro di perimetro.yaml
+                                Rifiutata se è fuori dal perimetro di perimetro.yaml. La
+                                destinazione (prop se non la dici) decide i minimi della misura
     ricerca measure <id>        registra idee/<id>/misura.json (scritto da
                                 `python3 -m motore.misura <id> --json`): uno sguardo contato.
                                 Rifiutata oltre il tetto mensile; stampa SOPRA / SOTTO SOGLIA
@@ -20,7 +22,7 @@ import json
 import sys
 from pathlib import Path
 
-from ricerca.perimetro import load_perimeter, this_month
+from ricerca.perimetro import DEFAULT_DESTINATION, load_perimeter, this_month
 from ricerca.registry import Registry
 
 LAB = Path(__file__).resolve().parents[3]
@@ -62,13 +64,13 @@ def cmd_idea(a):
     d = _dir(a.id)
     if d.exists():
         sys.exit(f"ricerca/idee/{a.id} esiste già")
-    outside = load_perimeter().check_idea(a.horizon, a.market)
+    outside = load_perimeter().check_idea(a.horizon, a.market, a.destination)
     if outside:
         sys.exit("fuori dal perimetro:\n  " + "\n  ".join(outside))
-    Registry().register_idea(a.id, a.title, a.door, a.parent, a.horizon, a.market)   # rifiuta prima di scrivere
+    Registry().register_idea(a.id, a.title, a.door, a.parent, a.horizon, a.market, a.destination)   # rifiuta prima di scrivere
     d.mkdir(parents=True)
     (d / "hypothesis.md").write_text(HYPOTHESIS_TEMPLATE.format(id=a.id))
-    print(f"idea {a.id} registrata ({a.door}, {a.horizon}, {a.market}); creato ricerca/idee/{a.id}/hypothesis.md")
+    print(f"idea {a.id} registrata ({a.door}, {a.horizon}, {a.market}, {a.destination}); creato ricerca/idee/{a.id}/hypothesis.md")
 
 
 def cmd_measure(a):
@@ -82,8 +84,11 @@ def cmd_measure(a):
                  f"(massimo {per.misura.idee_al_mese_max} in perimetro.yaml). L'idea aspetta il mese prossimo.")
     metrics = json.loads(f.read_text())
     reg.record_measure(a.id, metrics)
-    below = per.check_measure(metrics)
-    print("SOPRA SOGLIA" if not below else "SOTTO SOGLIA: " + "; ".join(below))
+    dest = reg.destination(a.id) or DEFAULT_DESTINATION
+    below = per.check_measure(metrics, dest)
+    print(f"destinazione {dest}: " + ("SOPRA SOGLIA" if not below else "SOTTO SOGLIA: " + "; ".join(below)))
+    for line in per.to_watch(metrics, dest):
+        print(f"da guardare, non uccide: {line}")
     print(f"(idee misurate: {len(reg.ideas_first_measured_in(this_month()))} questo mese su "
           f"{per.misura.idee_al_mese_max}, {reg.ideas_measured()} in tutto)")
 
@@ -105,12 +110,13 @@ def cmd_status(a):
                 stage = s
         if e["idea"] in killed:
             stage = f"uccisa ({killed[e['idea']]['step']})"
-        print(f"{e['idea']:32} {stage:18} {e.get('horizon') or '':9} {e.get('market') or '':5} {e['door']}")
+        print(f"{e['idea']:32} {stage:18} {e.get('horizon') or '':9} {e.get('market') or '':5} {e.get('destination') or DEFAULT_DESTINATION:5} {e['door']}")
     per = load_perimeter()
     print(f"\nidee: {len(reg.ideas())} nate, {reg.ideas_measured()} misurate, {len(killed)} uccise")
     print(f"questo mese alla misura: {len(reg.ideas_first_measured_in(this_month()))} su {per.misura.idee_al_mese_max}")
     print("orizzonti accesi: " + ", ".join(k for k, h in per.orizzonti.items() if h.attivo and h.misura)
-          + " · mercati con dati: " + ", ".join(k for k, m in per.mercati.items() if m.dati))
+          + " · mercati con dati: " + ", ".join(k for k, m in per.mercati.items() if m.dati)
+          + " · destinazioni: " + ", ".join(per.destinazioni))
 
 
 def main():
@@ -123,6 +129,8 @@ def main():
     p.add_argument("--door", required=True, choices=("user", "researcher"))
     p.add_argument("--horizon", required=True, help="intraday, daily, swing: acceso in perimetro.yaml")
     p.add_argument("--market", required=True, help="un mercato con dati in perimetro.yaml")
+    p.add_argument("--destination", default=DEFAULT_DESTINATION,
+                   help="prop o live, come in perimetro.yaml: decide i minimi della misura")
     p.add_argument("--parent")
     p.set_defaults(fn=cmd_idea)
     p = sub.add_parser("measure")

@@ -81,7 +81,8 @@ class Registry:
     # ---- cosa si scrive -------------------------------------------------------------
 
     def register_idea(self, idea: str, title: str, door: str, parent: str | None = None,
-                      horizon: str | None = None, market: str | None = None) -> None:
+                      horizon: str | None = None, market: str | None = None,
+                      destination: str | None = None) -> None:
         """Un'idea conta dalla nascita, qualunque cosa le succeda dopo."""
         if door not in DOORS:
             raise ValueError(f"la porta è una di {DOORS}, non {door!r}")
@@ -89,8 +90,18 @@ class Registry:
             raise RegistryError(f"l'idea {idea!r} è già nel registro: una variante è un'idea nuova con parent=")
         if parent is not None and parent not in self.ideas():
             raise RegistryError(f"la madre {parent!r} non è un'idea del registro")
-        self._append("idea", {"idea": idea, "title": title, "door": door, "parent": parent,
-                              "horizon": horizon, "market": market})
+        body = {"idea": idea, "title": title, "door": door, "parent": parent,
+                "horizon": horizon, "market": market}
+        if destination is not None:
+            body["destination"] = destination
+        self._append("idea", body)
+
+    def destination(self, idea: str) -> str | None:
+        """The destination the idea was born with; None for ideas older than destinations."""
+        for e in self.entries():
+            if e["kind"] == "idea" and e["idea"] == idea:
+                return e.get("destination")
+        raise RegistryError(f"l'idea {idea!r} non è nel registro")
 
     def record_measure(self, idea: str, metrics: dict) -> None:
         self._require_open(idea)

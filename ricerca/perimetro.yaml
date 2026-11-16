@@ -2,7 +2,7 @@
 #
 # Lo leggono gli agenti, per sapere cosa cercare e cosa scartare, e il codice, che rifiuta
 # quello che sta fuori: `ricerca idea` non registra un'idea su un orizzonte spento o su un
-# mercato senza dati, `ricerca measure` non va oltre il tetto mensile.
+# mercato senza dati o per una destinazione sconosciuta, `ricerca measure` non va oltre il tetto mensile.
 #
 # Si cambia con un commit. Un perimetro cambiato vale per le idee nuove: quelle gia nel
 # registro restano giudicate con il perimetro del loro giorno.
@@ -32,8 +32,20 @@ mercati:
   CL: {dati: false}
   BTC: {dati: false}
 
+# Per cosa si cerca l'idea. Si sceglie alla nascita (`ricerca idea --destination`) e decide con
+# quali minimi viene letta la misura. Il resto del perimetro (orizzonti, mercati, tetto mensile)
+# e uguale per tutte. Il perche della differenza e in multicharts/docs/prop_vs_live.md.
+destinazioni:
+  prop:
+    cosa: "una eval o un conto funded: conta passare, con piu tentativi"
+    errori_standard_min: 3.0                # eccesso / errore standard
+    dollari_al_giorno_per_micro_min: 10.0   # multicharts/docs/cosa_uccide_le_strategie.md: sotto non si parte
+  live:
+    cosa: "soldi propri, anche in demo: conta che l'edge regga nel tempo"
+    errori_standard_min: 3.0
+    dollari_al_giorno_per_micro_min: null   # nessun minimo al giorno: non c'e una eval da passare in tempo
+    media_per_trade_per_micro_da_guardare: 7.0   # stampata accanto alla misura, non uccide (prop_vs_live.md: avg trade >= $70 a contratto)
+
 misura:
   periodo: ["2020-01-01", "2024-12-31"]     # solo in-sample: il comando della misura non ne accetta altri
-  errori_standard_min: 3.0                  # eccesso / errore standard
-  dollari_al_giorno_per_micro_min: 10.0
   idee_al_mese_max: 8                       # idee nuove che arrivano alla misura in un mese, dalle due porte insieme

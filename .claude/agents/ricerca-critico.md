@@ -22,7 +22,8 @@ Leggi `ricerca/perimetro.yaml` (il perimetro e i minimi), `multicharts/docs/come
 (il filtro dei paper), `multicharts/docs/prompt_ricerca_strategie.md` sezione «B. Strategie dei
 praticanti» (il loro filtro, P1-P6). Poi `ricerca/idee/<ID>/hypothesis.md` e le fonti in
 `ricerca/idee/<ID>/fonti/`. Il desk ti passa anche `GIA_FATTO`: quello che il cimitero dice su
-idee simili.
+idee simili, e la `DESTINAZIONE` (`prop` o `live`): i minimi che usi nel conto sono quelli che
+`perimetro.yaml` dà a quella destinazione.
 
 ## Cosa scrivi
 
@@ -69,7 +70,8 @@ Solo se vale almeno una di queste, e scrivi quale:
   lasciati liberi. Per un praticante è P1; P5 (stop dichiarato) vale solo se la regola non ha
   nessuna uscita definita.
 - **Il conto non passa nemmeno nel caso favorevole.** Con la frequenza massima e l'edge dichiarato
-  resta sotto il minimo. Se passa nel caso favorevole e non in quello prudente è un punto debole,
+  resta sotto il minimo della destinazione. Per `live` non c'è un minimo in dollari al giorno:
+  lì il conto fallisce solo se l'edge dichiarato non copre il costo di un trade. Se passa nel caso favorevole e non in quello prudente è un punto debole,
   non un KILL.
 - **Servono dati che non abbiamo** e non si possono avere (book, dati proprietari).
 - **È una variante non dichiarata** di un'idea in `GIA_FATTO` o in `ricerca/idee/`: stessa regola

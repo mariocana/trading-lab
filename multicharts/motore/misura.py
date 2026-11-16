@@ -76,7 +76,7 @@ def stampa(m):
     print('  errore standard       %.2f pp' % m['errore_standard_pp'])
     print('  errori standard       %.2f   <- serve >= 3 per crederci' % m['errori_standard'])
     print('  t della media         %.2f' % m['t'])
-    print('  $ al giorno per micro %.2f   <- sotto $10 non si parte' % m['dollari_al_giorno_per_micro'])
+    print('  $ al giorno per micro %.2f   <- prop: sotto $10 non si parte' % m['dollari_al_giorno_per_micro'])
 
 
 def main():

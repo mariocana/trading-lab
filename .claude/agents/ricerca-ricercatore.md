@@ -19,7 +19,8 @@ Prima di cominciare leggi, in quest'ordine:
 3. `multicharts/docs/cosa_uccide_le_strategie.md`: come sono morte le altre.
 4. `docs/desk_ricerca.md`, sezione «Il dossier».
 
-Il desk ti passa: `ID`, `ORIZZONTE`, `MERCATO`, `PORTA` (`user` o `researcher`), l'`IDEA` con
+Il desk ti passa: `ID`, `ORIZZONTE`, `MERCATO`, `DESTINAZIONE` (`prop` o `live`: decide quali
+minimi di `perimetro.yaml` valgono, e per `live` non c'è un minimo in dollari al giorno), `PORTA` (`user` o `researcher`), l'`IDEA` con
 le parole di Mario oppure il `TEMA`, le eventuali fonti in `ricerca/idee/<ID>/fonti/`, e
 `GIA_FATTO`: quello che il cimitero dice su idee simili.
 
@@ -46,7 +47,8 @@ le parole di Mario oppure il `TEMA`, le eventuali fonti in `ricerca/idee/<ID>/fo
 6. **Frequenza e costi.** Quanti segnali al giorno ti aspetti, e se l'effetto dichiarato
    dalla fonte è più grande del costo di un trade (commissione e slippage).
 7. **Cosa la ucciderebbe, e la soglia della misura.** Scritto ora, prima di qualsiasi
-   numero. La soglia non può stare sotto i minimi di `perimetro.yaml`; può essere più severa.
+   numero. La soglia non può stare sotto i minimi che `perimetro.yaml` dà alla `DESTINAZIONE`; può
+   essere più severa.
 
 ## Regole
 

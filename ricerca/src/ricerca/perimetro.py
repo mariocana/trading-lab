@@ -3,7 +3,7 @@
 What an agent is told in a prompt is a request; what this module refuses is a wall. So the
 parts of the perimeter that can be checked are checked in code: which horizons are open,
 which markets have data, how many new ideas may reach the measure in a month, and whether a
-measure clears the floor that is the same for every idea.
+measure clears the floors of the idea's destination (prop or live).
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field
 
+MICRO = 10          # motore.misura reports media_per_trade per full contract
 PERIMETRO_PATH = Path(__file__).resolve().parents[2] / "perimetro.yaml"
 
 
@@ -27,21 +28,33 @@ class Market(BaseModel):
     dati: bool
 
 
+class Destination(BaseModel):
+    """What the idea is for. It sets the floors the measure is read against."""
+    cosa: str
+    errori_standard_min: float = Field(gt=0)
+    dollari_al_giorno_per_micro_min: float | None = Field(default=None, ge=0)   # None: no floor
+    media_per_trade_per_micro_da_guardare: float | None = Field(default=None, ge=0)   # printed, never kills
+
+
 class MeasureRules(BaseModel):
     periodo: tuple[str, str]
-    errori_standard_min: float = Field(gt=0)
-    dollari_al_giorno_per_micro_min: float = Field(ge=0)
     idee_al_mese_max: int = Field(ge=1)
+
+
+DEFAULT_DESTINATION = "prop"      # ideas registered before destinations existed were judged as prop
 
 
 class Perimeter(BaseModel):
     orizzonti: dict[str, Horizon]
     mercati: dict[str, Market]
+    destinazioni: dict[str, Destination]
     misura: MeasureRules
 
-    def check_idea(self, horizon: str, market: str) -> list[str]:
+    def check_idea(self, horizon: str, market: str, destination: str = DEFAULT_DESTINATION) -> list[str]:
         """Why this idea is outside the perimeter; empty when it is inside."""
         out = []
+        if destination not in self.destinazioni:
+            out.append(f"destinazione {destination!r} sconosciuta: {sorted(self.destinazioni)}")
         h = self.orizzonti.get(horizon)
         if h is None:
             out.append(f"orizzonte {horizon!r} sconosciuto: {sorted(self.orizzonti)}")
@@ -56,16 +69,25 @@ class Perimeter(BaseModel):
             out.append(f"mercato {market!r}: mancano i dati nel lake")
         return out
 
-    def check_measure(self, metrics: dict) -> list[str]:
-        """Which floors the measure misses; empty when it clears them all."""
-        r, out = self.misura, []
+    def check_measure(self, metrics: dict, destination: str = DEFAULT_DESTINATION) -> list[str]:
+        """Which floors of its destination the measure misses; empty when it clears them all."""
+        r, out = self.destinazioni[destination], []
         es = metrics.get("errori_standard")
         if es is None or es < r.errori_standard_min:
             out.append(f"errori standard {es if es is None else round(es, 2)} < {r.errori_standard_min}")
-        d = metrics.get("dollari_al_giorno_per_micro")
-        if d is None or d < r.dollari_al_giorno_per_micro_min:
-            out.append(f"$ al giorno per micro {d if d is None else round(d, 2)} < {r.dollari_al_giorno_per_micro_min}")
+        if r.dollari_al_giorno_per_micro_min is not None:
+            d = metrics.get("dollari_al_giorno_per_micro")
+            if d is None or d < r.dollari_al_giorno_per_micro_min:
+                out.append(f"$ al giorno per micro {d if d is None else round(d, 2)} < {r.dollari_al_giorno_per_micro_min}")
         return out
+
+    def to_watch(self, metrics: dict, destination: str = DEFAULT_DESTINATION) -> list[str]:
+        """Numbers the destination asks to look at. They are printed and never close an idea."""
+        ref = self.destinazioni[destination].media_per_trade_per_micro_da_guardare
+        m = metrics.get("media_per_trade")
+        if ref is None or m is None:
+            return []
+        return [f"media per trade ${m / MICRO:.2f} per micro, da confrontare con ${ref:.2f}"]
 
 
 def load_perimeter(path: Path | None = None) -> Perimeter:
