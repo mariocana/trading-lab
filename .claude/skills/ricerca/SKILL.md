@@ -90,7 +90,8 @@ file `link.txt`) prima di chiamare il ricercatore.
   Non rimandare i numeri al ricercatore o al coder, e non proporre di cambiare un parametro.
 - **Il passo 6**: scrivi `ricerca/idee/<id>/dossier.md` mettendo in fila, senza
   riscriverli, `hypothesis.md`, `critique.md` e la misura (eccesso, errori standard, trade al
-  giorno, dollari al giorno per micro, periodo). In cima tre righe: cosa dice l'idea, cosa ha
+  giorno, dollari al giorno per micro, periodo). In cima una riga con la destinazione e i minimi applicati (serve a
+  `/lab` per scrivere la SPEC sulla via giusta), poi tre righe: cosa dice l'idea, cosa ha
   detto il critico, cosa dice la misura.
 - **Il passo 7 è di Mario.** Se dice sì, copia il dossier in
   `multicharts/strategies/<Nome>/dossier.md` e digli di aprire `/lab nuova`: la strategia del
