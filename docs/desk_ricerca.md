@@ -127,7 +127,7 @@ leggono gli agenti e lo fa rispettare il codice.
 | cosa | oggi | chi lo fa rispettare |
 |---|---|---|
 | Orizzonti | **intraday acceso**; daily e swing spenti | `ricerca idea` rifiuta un orizzonte spento |
-| Vincoli dell'orizzonte | intraday: flat a fine giornata, almeno 1 segnale al giorno | il critico |
+| Vincoli dell'orizzonte | intraday: flat a fine giornata | il critico |
 | Mercati | NQ ed ES (hanno lo storico a 1 minuto); GC, CL e BTC senza dati | `ricerca idea` rifiuta un mercato senza dati |
 | Minimi della misura | eccesso ad almeno 3 errori standard, almeno $10 al giorno per micro | `ricerca measure` stampa SOPRA o SOTTO SOGLIA |
 | Tetto mensile | 8 idee nuove alla misura, dalle due porte insieme | `ricerca measure` rifiuta la nona |
@@ -359,11 +359,9 @@ cartelle in `ricerca/idee/prova2_*`.
 - **Il critico vale per il dossier**, non per la selezione: dice cosa guardare quando la
   misura passa.
 
-**Una cosa da cambiare nel perimetro.** `segnali_al_giorno_min: 1` contraddice i fatti:
-Overnight Bias fa 0,35 trade al giorno ed è viva, perché porta $14 al giorno per micro. Il
-vincolo vero è il minimo in dollari al giorno; il minimo di segnali è un doppione più severo.
-Oggi non fa danni solo perché il critico corretto guarda il massimo di trade che la regola
-permette e non la media.
+**Tolto dal perimetro il 16/11: `segnali_al_giorno_min`.** Contraddiceva i fatti: Overnight Bias
+fa 0,35 trade al giorno ed è viva, perché porta $14 al giorno per micro. Il vincolo che resta è
+il minimo in dollari al giorno; la frequenza conta solo dentro quel conto.
 
 **Limiti.**
 
@@ -376,10 +374,9 @@ permette e non la media.
 
 ## Cosa manca
 
-1. **Decidere cosa fare del critico**: tenerlo com'è (scrive il dossier, uccide solo sui
-   conti), oppure togliere la riga `RISERVA`, che non distingue.
-2. **Togliere o abbassare `segnali_al_giorno_min`** nel perimetro.
-3. **La misura per daily e swing**, il giorno in cui si accendono.
-4. **Il conto delle idee dentro `lab.py`**, se si decide di non leggerlo a mano.
-5. **Due cose nel motore**, se servono: l'ordine «alla chiusura di questa barra» e la regola
+1. **Guardare la riga `RISERVA` sulle prossime idee vere.** Resta, per decisione di Mario del
+   16/11; nella seconda prova era «sì» su tutte e tre.
+2. **La misura per daily e swing**, il giorno in cui si accendono.
+3. **Il conto delle idee dentro `lab.py`**, se si decide di non leggerlo a mano.
+4. **Due cose nel motore**, se servono: l'ordine «alla chiusura di questa barra» e la regola
    prudente quando stop e target cadono nello stesso minuto.

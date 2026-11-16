@@ -63,7 +63,8 @@ Solo se vale almeno una di queste, e scrivi quale:
 
 - **Fuori perimetro.** Orizzonte spento, mercato senza dati, o una regola che per costruzione
   non rispetta i vincoli dell'orizzonte in `perimetro.yaml`: non è flat a fine giornata quando
-  serve, o il suo massimo di trade al giorno sta sotto `segnali_al_giorno_min`.
+  serve. La frequenza da sola non è mai una ragione: conta solo dentro il conto, in dollari
+  al giorno per micro.
 - **La regola non è eseguibile.** Manca qualcosa che il coder dovrebbe inventare, o ha parametri
   lasciati liberi. Per un praticante è P1; P5 (stop dichiarato) vale solo se la regola non ha
   nessuna uscita definita.

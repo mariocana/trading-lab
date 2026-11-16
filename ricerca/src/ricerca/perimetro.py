@@ -20,7 +20,6 @@ class Horizon(BaseModel):
     attivo: bool
     cosa: str
     flat_a_fine_giornata: bool
-    segnali_al_giorno_min: float = Field(ge=0)
     misura: str | None = None
 
 

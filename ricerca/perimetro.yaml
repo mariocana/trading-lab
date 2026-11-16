@@ -12,19 +12,16 @@ orizzonti:
     attivo: true
     cosa: "entra ed esce nella stessa sessione"
     flat_a_fine_giornata: true
-    segnali_al_giorno_min: 1        # sotto, la frequenza non regge il conto (cosa_uccide_le_strategie.md)
     misura: motore                  # multicharts/motore, barre da 1 minuto
   daily:
     attivo: false
     cosa: "decide una volta al giorno, tiene da uno a pochi giorni, anche overnight"
     flat_a_fine_giornata: false
-    segnali_al_giorno_min: 0
     misura: null                    # non c'e ancora: servono barre giornaliere e un motore che le legga
   swing:
     attivo: false
     cosa: "tiene da giorni a settimane"
     flat_a_fine_giornata: false
-    segnali_al_giorno_min: 0
     misura: null
 
 # dati: true = lo storico a 1 minuto e in quantlake/data/multicharts e il motore lo legge.
