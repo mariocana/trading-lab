@@ -5,6 +5,7 @@ from .prova_nq_first5 import PROVA_NQ_FIRST5
 from .prova2_last_half_hour import PROVA2_LAST_HALF_HOUR
 from .prova_vwap_fade import VwapFade
 from .prova2_orb_breakout import ORBBreakout
+from .monday_long import MondayLong
 
 STRATEGIE = {
     'dpb': dict(classe=DPB, simbolo='NQ', tf=(5, 15), punto=20.0, comm_lato=7.5, riscaldamento=10),
@@ -17,4 +18,6 @@ STRATEGIE = {
                             riscaldamento=3),
     'prova2_orb_breakout': dict(classe=ORBBreakout, simbolo='NQ', tf=(5,), punto=20.0, comm_lato=7.5,
                                 riscaldamento=3),
+    'monday_long': dict(classe=MondayLong, simbolo='ES', tf=(1,), punto=50.0, comm_lato=15.0,
+                        riscaldamento=3),
 }
