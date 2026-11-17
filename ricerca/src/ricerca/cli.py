@@ -25,7 +25,7 @@ import json
 import sys
 from pathlib import Path
 
-from ricerca.fonti import scan
+from ricerca.fonti import scan, sezioni
 from ricerca.perimetro import DEFAULT_DESTINATION, load_perimeter, this_month
 from ricerca.registry import Registry
 
@@ -91,9 +91,12 @@ def cmd_fonti(a):
     if non_letti:
         print("non letti (non sono testo, aprili tu): " + ", ".join(non_letti))
     if nostre:
-        print(f"NOSTRE MISURE, {len(nostre)} righe: toglile prima di chiamare un agente")
+        print(f"NOSTRE MISURE, {len(nostre)} righe:")
         for f, i, r in nostre:
             print(f"  {f}:{i}  {corta(r)}")
+        print("togli le sezioni intere, non le righe (i numeri stanno nelle righe intorno):")
+        for f, dal, al, titolo in sezioni(d, nostre):
+            print(f"  {f}: righe {dal}-{al}  «{titolo}»")
         sys.exit(f"fonti di {a.id} non pulite")
     print(f"fonti di {a.id}: nessuna nostra misura trovata")
 

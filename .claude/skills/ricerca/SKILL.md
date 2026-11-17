@@ -71,8 +71,10 @@ file `link.txt`) prima di chiamare il ricercatore.
 cd ricerca && poetry run ricerca fonti <id>
 ```
 
-- Se rifiuta (`NOSTRE MISURE`), togli quelle righe dalla fonte e lascia in cima una nota che
-  comincia con `>` e dice cosa hai tolto, senza numeri. Poi rilancia.
+- Se rifiuta (`NOSTRE MISURE`), togli dalla fonte le **sezioni intere** che il comando elenca,
+  non le singole righe: i numeri stanno nelle righe intorno, che non hanno segni. Lascia in
+  cima una nota che comincia con `>` e dice cosa hai tolto, senza numeri. Poi rilancia, e
+  rileggi comunque le righe sotto `numeri di performance`.
 - Le righe sotto `numeri di performance` leggile una per una: restano solo se è la fonte a
   dichiararle (un paper, l'autore di un corso), non se le abbiamo misurate noi.
 - I file che non legge (PDF) aprili tu.

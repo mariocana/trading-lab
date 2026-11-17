@@ -11,8 +11,11 @@ che dica se la regola guadagna.
 
 Cosa NON stampa, e non va aggiunto: prezzi, punti, dollari, escursioni, e quante uscite ha ogni
 segnale. Contare le uscite a target contro quelle a stop e' un win rate. Per lo stesso motivo
-delle uscite si danno solo il primo e l'ultimo orario, non la distribuzione, e della durata solo
-la piu' corta e la piu' lunga.
+delle uscite il riepilogo da' solo il primo e l'ultimo orario, non la distribuzione, e della
+durata solo la piu' corta e la piu' lunga.
+
+--giorno mostra gli orari di uscita dei trade di una data: serve per capire un giorno che non
+torna, non va girato su tutte le date per ricostruire la distribuzione delle uscite.
 """
 import argparse, collections, datetime as dt
 

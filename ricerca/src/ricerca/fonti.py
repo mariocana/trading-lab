@@ -10,6 +10,10 @@ due:
 - `numeri`: righe con un numero di performance senza quei segni. Il desk le legge una per una
   e controlla che siano dichiarazioni della fonte.
 
+Una riga segnalata non va tolta da sola: i numeri stanno spesso nelle righe intorno, che non
+hanno nessun segno. `sezioni` dice quale sezione intera togliere (dal titolo che la apre al
+titolo successivo).
+
 È un setaccio largo, non una prova: una riga pulita qui può ancora dire troppo.
 """
 from __future__ import annotations
@@ -52,3 +56,19 @@ def scan(cartella: Path) -> tuple[list[tuple[str, int, str]], list[tuple[str, in
             elif NUMERI.search(riga):
                 numeri.append((nome, i, riga.strip()))
     return nostre, numeri, non_letti
+
+
+def sezioni(cartella: Path, nostre: list[tuple[str, int, str]]) -> list[tuple[str, int, int, str]]:
+    """Le sezioni da togliere intere: (file, prima riga, ultima riga, titolo). Una sezione va dal
+    titolo markdown che precede la riga segnalata al titolo successivo; senza titoli è il file."""
+    out = []
+    for nome in sorted({f for f, _, _ in nostre}):
+        righe = (cartella / nome).read_text(errors="replace").splitlines()
+        titoli = [i for i, r in enumerate(righe, 1) if r.startswith("#")]
+        for i in sorted({i for f, i, _ in nostre if f == nome}):
+            dal = max((t for t in titoli if t <= i), default=1)
+            al = min((t for t in titoli if t > i), default=len(righe) + 1) - 1
+            s = (nome, dal, al, righe[dal - 1].lstrip("# ").strip() if dal in titoli else "(senza titolo)")
+            if s not in out:
+                out.append(s)
+    return out

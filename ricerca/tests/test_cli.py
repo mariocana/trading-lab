@@ -142,7 +142,10 @@ def test_le_fonti_con_una_nostra_misura_non_passano(lab, capsys):
     out = capsys.readouterr().out
     assert "idea.md:3" in out and "paper.pdf" in out and "nessuna nostra misura" in out
     assert "idea.md:4" not in out and "idea.md:1" not in out       # una regola e una nota del desk non sono numeri
-    (d / "idea.md").write_text("## Contaminazione\nIl desk ha già misurato l'IS: 257 lunedì, t 2,51.\n")
+    (d / "idea.md").write_text("# Idea\nregola\n## Contaminazione\nIl desk ha già misurato l'IS:\n"
+                               "257 lunedì, t 2,51.\n## Setup\nchart a 5 minuti\n")
     with pytest.raises(SystemExit, match="non pulite"):
         cli.cmd_fonti(args())
-    assert "idea.md:2" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "idea.md:4" in out
+    assert "righe 3-5  «Contaminazione»" in out      # la riga col numero (5) non ha segni: va via con la sezione
