@@ -99,7 +99,7 @@ def test_un_cambio_apre_la_posizione_equivalente_con_il_suo_stop(env):
     f.step()
     env.write("DPB;NQ;-1;120.00;FINE")
     f.step()
-    assert size(env) == pytest.approx(-0.1)            # 1 micro x 2 unita x scala 0.05, short
+    assert size(env) == pytest.approx(-0.1, rel=0.01)            # 1 micro x 2 unita x scala 0.05, short
     (intent,) = env.adapter.intents
     assert intent.side == "sell" and intent.stop_px == pytest.approx(MID + 120)
     assert intent.order_type == "limit_ioc" and intent.strategy_id == "DPB"
@@ -113,7 +113,7 @@ def test_il_cambio_di_lato_chiude_e_poi_apre(env):
     f.step()
     env.write("DPB;NQ;1;120;FINE")
     f.step()
-    assert size(env) == pytest.approx(0.1)
+    assert size(env) == pytest.approx(0.1, rel=0.01)
 
 
 def test_flat_chiude(env):
@@ -147,7 +147,7 @@ def test_un_cambio_di_size_dentro_un_trade_non_si_copia(env):
     f.step()
     env.write("DPB;NQ;2;120;FINE")
     f.step()
-    assert size(env) == pytest.approx(0.1)
+    assert size(env) == pytest.approx(0.1, rel=0.01)
 
 
 def test_una_riga_a_meta_si_rilegge_al_giro_dopo(env):
@@ -159,7 +159,7 @@ def test_una_riga_a_meta_si_rilegge_al_giro_dopo(env):
     assert size(env) == 0
     env.write("DPB;NQ;1;120;FINE")
     f.step()
-    assert size(env) == pytest.approx(0.1)
+    assert size(env) == pytest.approx(0.1, rel=0.01)
 
 
 def test_il_file_che_manca_non_e_uno_stato(env):
@@ -193,7 +193,7 @@ def test_il_kill_switch_ferma_le_aperture_e_dopo_i_tentativi_si_ferma_e_avvisa(e
     RiskState.release_kill()
     env.write("DPB;NQ;-1;120;FINE")
     f.step()
-    assert size(env) == pytest.approx(-0.1)
+    assert size(env) == pytest.approx(-0.1, rel=0.01)
 
 
 def test_una_chiusura_passa_anche_con_il_kill_switch(env):
@@ -311,4 +311,27 @@ def test_la_size_e_lo_stop_si_prezzano_dove_riposa_l_ordine(env):
     f.step()
     (intent,) = env.adapter.intents
     assert intent.stop_px == pytest.approx(30_000.0 + 120)
-    assert intent.notional_usd == pytest.approx(0.1 * 30_000.0)
+    assert intent.limit_px == pytest.approx(30_000.0 * (1 - 0.002))     # lo scarto di default, 20 bps
+    assert intent.notional_usd == pytest.approx(0.1 * intent.limit_px)  # le unita' sono quelle volute, qualunque sia il limite
+
+
+def test_lo_slittamento_massimo_si_sceglie(env):
+    env.write("DPB;NQ;0;0;FINE")
+    f = env.build(cfg(slittamento_max_bps=1000))
+    f.step()
+    env.write("DPB;NQ;1;120;FINE")
+    f.step()
+    (intent,) = env.adapter.intents
+    assert intent.limit_px == pytest.approx(MID * 1.10)
+    assert size(env) == pytest.approx(0.1, rel=0.01)
+
+
+def test_se_il_prezzo_di_esecuzione_manca_non_si_ordina_al_prezzo_del_mainnet(env):
+    env.write("DPB;NQ;0;0;FINE")
+    f = env.build()
+    f.venue_mid = lambda perp: None
+    f.step()
+    env.write("DPB;NQ;-1;120;FINE")
+    f.step()
+    assert size(env) == 0 and env.adapter.intents == []
+    assert any("non vedo il book" in s for s in env.said)

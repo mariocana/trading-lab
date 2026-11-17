@@ -91,7 +91,9 @@ class PaperAdapter(ExecutionAdapter):
         cost = self.costs["maker" if intent.order_type == "limit_alo" else "taker"]
         fill_px = mid_px * (1 + sign * cost["slippage_bps"] / 1e4)
         notional = verdict.approved_notional_usd
-        size = sign * notional / fill_px
+        # the live adapter sizes an order at its limit price (sz = notional / limit), so a limit set wide does not
+        # change how many units were asked for: the paper account does the same
+        size = sign * notional / (intent.limit_px or fill_px)
 
         p = self.state["positions"].get(intent.asset)
         if intent.reduce_only:

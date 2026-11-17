@@ -112,7 +112,9 @@ class HLMarket:
 
     def book_depth_10bps(self, asset: str) -> tuple[float, float]:
         """(mid, USD notional resting within 10 bps of mid, both sides)."""
-        book = self.info.l2_snapshot(asset)
+        # the endpoint takes the name as listed; the SDK helper looks it up in a table that does not know HIP-3 names
+        # (KeyError on 'xyz:XYZ100'), so it is asked directly
+        book = self.info.post("/info", {"type": "l2Book", "coin": asset})
         bids, asks = book["levels"]
         if not bids or not asks:
             return 0.0, 0.0

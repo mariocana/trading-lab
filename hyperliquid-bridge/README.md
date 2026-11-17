@@ -65,6 +65,28 @@ HL_DEXS=xyz .venv/bin/hlbridge follow --live     # ordini veri (testnet salvo HL
   subito. Con `--live` la size in dollari e lo stop usano il book di esecuzione; i limiti di liquidità
   (volume, profondità) restano quelli del mainnet, perché il testnet non ha volume.
 
+## La prova su testnet del 17/11
+
+Con la chiave API wallet, su `xyz:XYZ100`, conto unificato:
+
+| | esito |
+|---|---|
+| Firma dell'API wallet e asset id 750000 del perp HIP-3 | **ok**: l'exchange arriva a validare l'ordine |
+| Margine di un perp HIP-3 su un conto unificato (il dex `xyz` ha saldo 0) | **ok**: un ordine a riposo di $20 è accettato |
+| Ordine, elenco degli ordini per dex, `cancel_asset_orders` | **ok**: l'ordine compare nell'elenco di `xyz` e si cancella |
+| Il follower che apre, con lo stop, e chiude | **non provato**: nessun ordine IOC si è riempito |
+
+Perché nessun fill: il book del testnet è bid 28.226 / ask 33.000 contro un mark di 29.368 e un oracolo
+di 28.180, e l'exchange rifiuta (`Price too far from oracle`) ogni prezzo a cui questo book si può
+attraversare. Un ordine a 29.074 (1% sotto il mark) passa, uno a 28.225 (3,9% sotto) no: la banda sembra
+centrata sul **mark**, non sul prezzo medio del book. Per aprire una posizione di prova serve un
+book con liquidità dentro la banda: il mainnet (XYZ100 fa circa $680 milioni al giorno) o un altro perp
+del testnet. Quindi **apertura, stop sull'exchange, `market_close` e cancellazione dopo la chiusura sono
+ancora non provati contro l'exchange**.
+
+Trovato lungo la strada: `book_depth_10bps` non risolveva i nomi HIP-3 (`KeyError`), e senza il prezzo
+di esecuzione il follower ordinava al prezzo del mainnet; ora non ordina se non vede il book.
+
 ## Cosa manca prima di un ordine vero
 
 1. **Lo stop d'emergenza sull'exchange** (dall'audit del 12/11). Oggi `_place_stop` parte solo se l'ordine è

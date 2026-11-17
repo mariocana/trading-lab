@@ -13,6 +13,10 @@ scala: 0.05
 
 tentativi: 5
 
+# Quanto lontano dal prezzo medio si spinge l'ordine per farsi riempire (IOC). 20 è il valore dell'adapter.
+# Sul testnet, dove il book di XYZ100 è largo il 16%, non basta: per la prova si alza.
+slittamento_max_bps: 20
+
 # Limiti di rischio di questo bridge, sopra config/limits.yaml (chiave per chiave). Il tetto di
 # limits.yaml per un perp HIP-3 è il 2% dell'equity: pensato per un book di molti nomi, una posizione
 # sola ci sbatte subito e il follower la riduce (e avvisa). Qui lo si alza per un bridge con una

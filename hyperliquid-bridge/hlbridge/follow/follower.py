@@ -130,6 +130,11 @@ class Follower:
             self.journal("follow_foreign_position", {"strategy": name, "perp": perp, "size": pos.size})
             return
         px = self.venue_mid(perp) if self.venue_mid else None
+        if self.venue_mid and not px:
+            # Asked for a price from where the order rests and got none: ordering at the mainnet price would be the
+            # exact mistake the venue price is there to avoid.
+            self._once(name, "venue_mid", f"{name}: non vedo il book di {perp} dove devo ordinare: non ordino.")
+            return
         if px:
             ctx = ctx.model_copy(update={"mid_px": px, "mark_px": px})
         target = self._target(name, w, ctx.sz_decimals)
@@ -158,9 +163,13 @@ class Follower:
         stop_px = px - sign * w.stop_pts if w.stop_pts > 0 else None
         if stop_px is None:
             self.notify(f"{name}: MultiCharts non ha dato uno stop d'emergenza: apro senza.")
-        intent = OrderIntent(asset=perp, side="buy" if sign > 0 else "sell", notional_usd=abs(target) * px,
-                             order_type="limit_ioc", stop_px=stop_px, strategy_id=name, horizon_hours=0,
-                             reason=f"follow:{name}")
+        # An IOC order is a limit: how far it may go from the mid is a setting, because a thin book (the testnet's
+        # is 16% wide) is never reached by the adapter's default 20 bps. Size is units x that limit, so the
+        # units are the ones MultiCharts' position asks for whatever the limit is.
+        limit_px = px * (1 + sign * self.cfg.slittamento_max_bps / 1e4)
+        intent = OrderIntent(asset=perp, side="buy" if sign > 0 else "sell", notional_usd=abs(target) * limit_px,
+                             order_type="limit_ioc", limit_px=limit_px, stop_px=stop_px, strategy_id=name,
+                             horizon_hours=0, reason=f"follow:{name}")
         acc = self.adapter.account_state()
         verdict = engine.evaluate(intent, acc, engine.Market(ctx), self.limits, self.state)
         if verdict.decision == "reject":
