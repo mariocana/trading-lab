@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12",
+ "updated": "2026-11-17",
  "goal": "Strategie per passare l'eval prop e incassare i payout. Nient'altro.",
  "profile": "WR 54–72% · R:R 0.5–1 · trade frequenti · sviluppo a 1 contratto NQ, size in micro dal simulatore (il rischio è un output, non un input)",
  "prop": "**LucidFlex 50k** · target $3.000 · MLL **$2.000** · EOD trailing che **si blocca** a $52.100 (locked $50.100) · consistency **40%** (50% con add-on, verificata 25/10) · 4 mini / 40 micro · **nessun daily loss** · automazione **permessa** (verificato 30/09/2026). Apex escluso: vieta esplicitamente l'automazione.",
@@ -1154,7 +1154,7 @@
     "0": "pass"
    },
    "metrics": {},
-   "next": "Stage 1: @ES 5 min dal 02/01/2020 al 29/05/2020, TradeStartEL 1200201 / TradeEndEL 1200529, run A a 1 contratto con log (ML_S1_x1 + ML_S1_log), run B a 10 (ML_S1_x10)",
+   "next": "Stage 1 su MultiCharts come da CHECKLIST_Stage1.md (02/01/2020 → 29/05/2020, run A con log e run B ×10), poi IS 2020-2024 una volta sola, poi OOS e gate marginale contro il book in vigore",
    "note": "",
    "log": [
     {
@@ -1164,6 +1164,10 @@
     {
      "date": "2026-11-10",
      "text": "**Codice pronto.** `MondayLong.txt` (`Mario_MondayLong`) e checklist dello Stage 1; SPEC corretta prima del codice (fase 3 contro il book in vigore, tetto 5). Non ancora compilato."
+    },
+    {
+     "date": "2026-11-17",
+     "text": "**Ripresa dopo lo spostamento in agentic-quant-lab (17/11).** Il desk /ricerca aveva chiuso l'idea il 16/11 sotto i minimi della destinazione prop (2,75 errori standard su 3,0; $4,98 al giorno per micro su $10) con una misura del motore sull'IS 2020-2024: 231 trade, WR 59,3%, t della media 2,10, $27,98 per micro a trade. Mario ha deciso di finire il percorso del lab, i cui kill sono altri (via B t > 1,03, trade peggiore ≤ $500 per micro). Controllato: il peggiore dell'IS nel motore è −$453 per micro (stop a −90 punti), il kill non scatta. **L'IS è già stato visto sul motore**: il giudizio di fase 2 su MC è una replica, non un primo sguardo. Il motore non può chiudere nessuna fase: la sua s1 sono gli ultimi 100 giorni (dentro l'OOS), non è calibrato su MC per questa strategia, e entra all'apertura delle 19:01 mentre MC entra alla chiusura della barra da 5 minuti."
     }
    ]
   }
