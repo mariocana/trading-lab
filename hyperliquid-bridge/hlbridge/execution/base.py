@@ -21,6 +21,15 @@ class ExecutionAdapter(ABC):
     def flatten_all(self) -> list[Fill]:
         """Close every open position at market. Used by the halt path only."""
 
+    @abstractmethod
+    def close_position(self, asset: str) -> Fill | None:
+        """Close the whole position in `asset` at market. None if there was nothing to close."""
+
+    def cancel_asset_orders(self, asset: str) -> int:
+        """Cancel what rests on the book for `asset`, stops included. A stop left behind after
+        a close would guard the next position at the old price. Returns how many were cancelled."""
+        return 0
+
     def tradable_assets(self) -> set[str] | None:
         """What this venue actually lists, or None when it takes anything.
 

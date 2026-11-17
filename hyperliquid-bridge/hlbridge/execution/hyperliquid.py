@@ -25,7 +25,7 @@ from hlbridge.execution.base import ExecutionAdapter, round_price, round_size
 from hlbridge.execution.ledger import PositionLedger
 from hlbridge.execution.reconcile import reconcile_fills
 from hlbridge.journal.log import record
-from hlbridge.schemas import AccountState, Fill, OrderIntent, RiskVerdict
+from hlbridge.schemas import AccountState, Fill, OrderIntent, Position, RiskVerdict
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class HyperliquidAdapter(ExecutionAdapter):
     name = "hyperliquid"
 
     def __init__(self, base_url: str, account_address: str, api_wallet_key: str,
-                 unified_collateral: bool = False):
+                 unified_collateral: bool = False, dexs: tuple[str, ...] = ()):
         try:
             wallet = eth_account.Account.from_key(api_wallet_key)
         except Exception as e:                    # noqa: BLE001 - the message matters more than the type
@@ -54,11 +54,14 @@ class HyperliquidAdapter(ExecutionAdapter):
         if not account_address.startswith("0x") or len(account_address) != 42:
             raise SystemExit(f"HL_ACCOUNT_ADDRESS does not look like an address: {account_address!r}")
         self.address = account_address
-        self.exchange = Exchange(wallet, base_url, account_address=account_address)
+        # perp_dexs: without it the SDK does not know the asset ids of HIP-3 perps ('xyz:XYZ100')
+        self.exchange = Exchange(wallet, base_url, account_address=account_address,
+                                 perp_dexs=list(dexs) if dexs else None)
         self.info: Info = self.exchange.info
         # account reads and asset metadata come from the venue we execute on,
         # not from the (mainnet) data feed the strategy looks at
-        self.venue = HLMarket(base_url)
+        self.venue = HLMarket(base_url, dexs)
+        self.dexs = dexs
         self.unified_collateral = unified_collateral
         self.ledger = PositionLedger()
         self._said_unmanaged: frozenset[str] = frozenset()
@@ -126,6 +129,26 @@ class HyperliquidAdapter(ExecutionAdapter):
             if match and match[0] in self.ledger.pending:
                 self.ledger.drop_pending(match[0])
             log.info("cancelled stale %s %s oid=%s -> %s", o["side"], o["coin"], o["oid"], _first_status(r))
+        return n
+
+    def cancel_asset_orders(self, asset: str) -> int:
+        """Cancel everything resting for one asset, trigger orders included. The open orders of a
+        HIP-3 dex are listed per dex, so each dex is asked. NOT yet checked against the exchange
+        for HIP-3 names: the first testnet run on a HIP-3 perp has to confirm it."""
+        n = 0
+        for dex in ("", *self.dexs):
+            body = {"type": "frontendOpenOrders", "user": self.address}
+            if dex:
+                body["dex"] = dex
+            for o in self.info.post("/info", body):
+                if o["coin"] != asset:
+                    continue
+                r = self.exchange.cancel(o["coin"], o["oid"])
+                n += 1
+                match = self.ledger.pending_for(oid=str(o["oid"]))
+                if match and match[0] in self.ledger.pending:
+                    self.ledger.drop_pending(match[0])
+                log.info("cancelled %s %s oid=%s -> %s", o["side"], o["coin"], o["oid"], _first_status(r))
         return n
 
     def _already_sent(self, cloid: Cloid) -> bool:
@@ -288,6 +311,33 @@ class HyperliquidAdapter(ExecutionAdapter):
         self.ledger.record_sent(intent, cloid.to_raw(), oid)
         return oid
 
+    def close_position(self, asset: str, reason: str = "close", pos: Position | None = None) -> Fill | None:
+        """Close the whole position in `asset` with market_close: the exact size, no dust."""
+        p = pos or self.account_state().position(asset)
+        if p is None:
+            return None
+        intent = OrderIntent(asset=p.asset, side="sell" if p.size > 0 else "buy",
+                             notional_usd=max(abs(p.notional_usd), 0.01), reduce_only=True,
+                             order_type="limit_ioc", strategy_id=p.strategy_id or "risk",
+                             horizon_hours=0, reason=reason)
+        cloid = cloid_for(intent.id)
+        self.ledger.record_sent(intent, cloid.to_raw(), None)
+        resp = self.exchange.market_close(p.asset, cloid=cloid)
+        status = _first_status(resp)
+        if "filled" in status:
+            f = status["filled"]
+            self.ledger.forget(p.asset)
+            return Fill(intent_id=intent.id, asset=p.asset, side=intent.side,
+                        requested_usd=abs(p.notional_usd), filled_usd=float(f["avgPx"]) * float(f["totalSz"]),
+                        decision_px=p.mark_px, fill_px=float(f["avgPx"]), fee_usd=0.0, partial=False,
+                        exchange_oid=str(f["oid"]))
+        if status.get("error") in (None, "None"):
+            log.info("close %s: nothing to close", p.asset)
+            self.ledger.forget(p.asset)
+        else:
+            log.error("close %s failed: %s", p.asset, status.get("error"))
+        return None
+
     def flatten_all(self) -> list[Fill]:
         """Close everything. These orders are ours too: without a cloid their fills
         come back unattributable, and a desk that cannot recognise its own closing
@@ -302,26 +352,9 @@ class HyperliquidAdapter(ExecutionAdapter):
 
         fills = []
         for p in self.account_state().positions:
-            intent = OrderIntent(asset=p.asset, side="sell" if p.size > 0 else "buy",
-                                 notional_usd=max(abs(p.notional_usd), 0.01), reduce_only=True,
-                                 order_type="limit_ioc", strategy_id=p.strategy_id or "risk",
-                                 horizon_hours=0, reason="flatten_all")
-            cloid = cloid_for(intent.id)
-            self.ledger.record_sent(intent, cloid.to_raw(), None)
-            resp = self.exchange.market_close(p.asset, cloid=cloid)
-            status = _first_status(resp)
-            if "filled" in status:
-                f = status["filled"]
-                self.ledger.forget(p.asset)
-                fills.append(Fill(intent_id=intent.id, asset=p.asset, side="sell" if p.size > 0 else "buy",
-                                  requested_usd=abs(p.notional_usd), filled_usd=float(f["avgPx"]) * float(f["totalSz"]),
-                                  decision_px=p.mark_px, fill_px=float(f["avgPx"]), fee_usd=0.0, partial=False,
-                                  exchange_oid=str(f["oid"])))
-            elif status.get("error") in (None, "None"):
-                log.info("flatten %s: nothing to close", p.asset)
-                self.ledger.forget(p.asset)
-            else:
-                log.error("flatten %s failed: %s", p.asset, status.get("error"))
+            f = self.close_position(p.asset, "flatten_all", p)
+            if f:
+                fills.append(f)
         return fills
 
 

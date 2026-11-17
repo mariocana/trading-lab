@@ -32,5 +32,6 @@ def state(tmp_path, monkeypatch):
     # isolate kill switch and state file from the real var/ directory
     monkeypatch.setattr("hlbridge.risk.state.KILL_FILE", tmp_path / "KILL")
     st = RiskState()
+    st._path = tmp_path / "risk_state.json"      # save() must never reach the real var/risk_state.json
     st.day, st.day_start_equity, st.peak_equity = "2026-01-01", 10_000.0, 10_000.0
     return st

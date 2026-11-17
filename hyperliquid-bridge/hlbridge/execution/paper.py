@@ -151,17 +151,24 @@ class PaperAdapter(ExecutionAdapter):
         self._save()
         return paid
 
+    def close_position(self, asset: str, reason: str = "close") -> Fill | None:
+        p = self.state["positions"].get(asset)
+        if p is None:
+            return None
+        mark = self._mark(asset, p["entry_px"])
+        side = "sell" if p["size"] > 0 else "buy"
+        # size the ticket at the price it will actually fill at, not at the mark
+        fill_px = mark * (1 + (1 if side == "buy" else -1) * self.costs["taker"]["slippage_bps"] / 1e4)
+        intent = OrderIntent(asset=asset, side=side, notional_usd=abs(p["size"]) * fill_px, reduce_only=True,
+                             order_type="limit_ioc", strategy_id=p.get("strategy_id") or "risk", horizon_hours=0,
+                             reason=reason)
+        verdict = RiskVerdict(intent_id=intent.id, decision="approve", approved_notional_usd=intent.notional_usd)
+        return self.execute(intent, verdict, mark)
+
     def flatten_all(self) -> list[Fill]:
         fills = []
-        for asset, p in list(self.state["positions"].items()):
-            mark = self._mark(asset, p["entry_px"])
-            side = "sell" if p["size"] > 0 else "buy"
-            # size the ticket at the price it will actually fill at, not at the mark
-            fill_px = mark * (1 + (1 if side == "buy" else -1) * self.costs["taker"]["slippage_bps"] / 1e4)
-            intent = OrderIntent(asset=asset, side=side, notional_usd=abs(p["size"]) * fill_px, reduce_only=True,
-                                 order_type="limit_ioc", strategy_id="risk", horizon_hours=0, reason="flatten_all")
-            verdict = RiskVerdict(intent_id=intent.id, decision="approve", approved_notional_usd=intent.notional_usd)
-            f = self.execute(intent, verdict, mark)
+        for asset in list(self.state["positions"]):
+            f = self.close_position(asset, "flatten_all")
             if f:
                 fills.append(f)
         return fills

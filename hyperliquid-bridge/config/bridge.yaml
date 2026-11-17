@@ -1,0 +1,34 @@
+# Il bridge MultiCharts -> Hyperliquid: cosa seguire e in che misura. Letto da `hlbridge follow`.
+# Il formato del file di stato è in multicharts/bridge/SPEC.md (v2).
+
+# Dove MultiCharts scrive i file mario_stato_<STRAT>.csv: la cartella Common di MetaQuotes sul VPS
+# Windows, per esempio C:/Users/<utente>/AppData/Roaming/MetaQuotes/Terminal/Common/Files.
+# In alternativa la variabile BRIDGE_STATE_DIR.
+cartella_stati: null
+
+# Frazione della size di MultiCharts. 1.0 = un micro di MultiCharts, una posizione equivalente su
+# Hyperliquid. Su un demo piccolo si parte basso: i limiti di rischio (config/limits.yaml) tagliano
+# comunque la posizione, ma un taglio silenzioso non è una scelta.
+scala: 0.05
+
+tentativi: 5
+
+# Limiti di rischio di questo bridge, sopra config/limits.yaml (chiave per chiave). Il tetto di
+# limits.yaml per un perp HIP-3 è il 2% dell'equity: pensato per un book di molti nomi, una posizione
+# sola ci sbatte subito e il follower la riduce (e avvisa). Qui lo si alza per un bridge con una
+# strategia: scelta tua, non l'ho cambiata.
+limiti: {}
+#  max_notional_pct_equity: {hip3: 0.5}
+
+# unita_per_micro: unità del perp per 1 micro. 1 MNQ vale $2 per punto e 1 unità di xyz:XYZ100 vale
+# $1 per punto dell'indice (il prezzo del perp è il livello dell'indice, 28.100 il 12/11/2026 contro
+# i 28.201 di NQ), quindi 2. DA RIVERIFICARE sulle specifiche del contratto prima del mainnet.
+# ES (xyz:SP500) e GC (xyz:GOLD) hanno un volume molto minore sul testnet, dove non ci sono: vanno
+# aggiunti qui solo dopo aver controllato lo stesso rapporto.
+strumenti:
+  NQ: {perp: "xyz:XYZ100", unita_per_micro: 2.0}
+
+# Una strategia per perp: DPB e OBO sono entrambe su NQ, quindi una sola alla volta finché non c'è un
+# subaccount per strategia. Parte DPB.
+strategie:
+  DPB: {file: mario_stato_DPB.csv, strumento: NQ}

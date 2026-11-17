@@ -69,10 +69,15 @@ class HLMarket:
                            f"({len(self._meta_cache)} perps available)") from None
 
     def contexts(self) -> dict[str, AssetContext]:
-        """Funding, OI, mark, mid, 24h volume for every main-dex perp."""
+        """Funding, OI, mark, mid, 24h volume for every main-dex perp, and for the perps of the
+        HIP-3 dexs this market was built with (names like 'xyz:XYZ100')."""
         meta, ctxs = self.info.meta_and_asset_ctxs()
+        pairs = list(zip(meta["universe"], ctxs))
+        for dex in self.dexs:
+            m, c = self.info.post("/info", {"type": "metaAndAssetCtxs", "dex": dex})
+            pairs += list(zip(m["universe"], c))
         out: dict[str, AssetContext] = {}
-        for u, c in zip(meta["universe"], ctxs):
+        for u, c in pairs:
             if u.get("isDelisted") or c.get("midPx") is None:
                 continue
             out[u["name"]] = AssetContext(
@@ -132,21 +137,28 @@ class HLMarket:
     def account_state(self, address: str, unified_collateral: bool = False) -> AccountState:
         st = self.info.user_state(address)
         ms = st["marginSummary"]
-        positions = []
-        for ap in st.get("assetPositions", []):
-            p = ap["position"]
-            size = float(p["szi"])
-            if size == 0:
-                continue
-            entry = float(p["entryPx"]) if p.get("entryPx") else 0.0
-            notional = float(p["positionValue"]) * (1 if size > 0 else -1)
-            mark = abs(notional / size) if size else entry
-            positions.append(Position(
-                asset=p["coin"], notional_usd=notional, size=size, entry_px=entry,
-                mark_px=mark, unrealized_pnl_usd=float(p["unrealizedPnl"]),
-            ))
+        positions, equity, margin_used = [], float(ms["accountValue"]), float(ms["totalMarginUsed"])
+        # A HIP-3 dex keeps its positions and its margin apart from the main one: the main
+        # clearinghouse state does not list them, each dex has to be asked.
+        states = [st] + [self.info.post("/info", {"type": "clearinghouseState", "user": address, "dex": d})
+                         for d in self.dexs]
+        for k, s in enumerate(states):
+            if k:
+                equity += float(s["marginSummary"]["accountValue"])
+                margin_used += float(s["marginSummary"]["totalMarginUsed"])
+            for ap in s.get("assetPositions", []):
+                p = ap["position"]
+                size = float(p["szi"])
+                if size == 0:
+                    continue
+                entry = float(p["entryPx"]) if p.get("entryPx") else 0.0
+                notional = float(p["positionValue"]) * (1 if size > 0 else -1)
+                mark = abs(notional / size) if size else entry
+                positions.append(Position(
+                    asset=p["coin"], notional_usd=notional, size=size, entry_px=entry,
+                    mark_px=mark, unrealized_pnl_usd=float(p["unrealizedPnl"]),
+                ))
         spot = self.spot_usdc(address)
-        equity = float(ms["accountValue"])
         return AccountState(
             # On a Unified account the exchange lets spot USDC back perp margin, and
             # the app shows the sum as "Available to Trade". The API reports the two
@@ -154,7 +166,7 @@ class HLMarket:
             # is a declared setting: inferring it would mean guessing how much capital
             # the desk has, and sizing every limit off that guess.
             equity_usd=equity + spot if unified_collateral else equity,
-            margin_used_usd=float(ms["totalMarginUsed"]),
+            margin_used_usd=margin_used,
             positions=positions,
             spot_usdc=spot,
             as_of=datetime.now(timezone.utc),

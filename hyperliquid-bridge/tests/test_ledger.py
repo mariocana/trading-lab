@@ -195,5 +195,8 @@ def test_flatten_cancels_before_it_closes():
     body = ast.dump(fn)
     assert "cancel_orders" in body, "flatten_all must cancel resting orders first"
     cancel_at = body.index("cancel_orders")
-    close_at = body.index("market_close")
+    close_at = body.index("close_position")      # the close itself lives in close_position, with market_close
+    closer = next(n for n in ast.walk(ast.parse(src))
+                  if isinstance(n, ast.FunctionDef) and n.name == "close_position")
+    assert "market_close" in ast.dump(closer)
     assert cancel_at < close_at, "cancelling has to happen before closing, not after"

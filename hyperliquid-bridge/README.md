@@ -4,8 +4,9 @@ Il connettore verso Hyperliquid: esecuzione, rischio e journal. **Non contiene s
 non decide niente.** Il segnale nasce in MultiCharts; questo pacchetto servirà a copiare su un
 perp la posizione che MultiCharts vuole, come fa il bridge MT5 sui CFD.
 
-**Stato: fermo, il bridge non c'è ancora.** Qui c'è quello che il bridge userà. Manca il pezzo
-che legge lo stato di MultiCharts e lo trasforma in ordini.
+**Stato (17/11/2026): il follower c'è e gira su un conto paper a prezzi veri; non è mai stato
+provato su Hyperliquid con ordini.** `hlbridge follow` legge i file di stato di MultiCharts e copia la
+posizione. Prima di un ordine vero mancano lo stop sull'exchange e la prova su testnet, in fondo.
 
 Fino al 12/11/2026 era `trading-desk`, un desk autonomo con una strategia sua (`reversal_v1`,
 bocciata in validation). Strategie, ciclo giornaliero, shadow mode e time stop sono stati
@@ -23,22 +24,57 @@ tolti: restano in git fino al commit `74ae180`.
 | `hlbridge/data/market_record.py` | ogni ora lo stato grezzo del mercato in `var/market/`, per quantlake: open interest e listini non si riscaricano |
 | `hlbridge/journal/`, `hlbridge/pm/` | journal append-only e avvisi Telegram |
 | `hlbridge/ui/` | pagina di controllo: conto, posizioni, limiti, kill switch, chiusura di tutto |
+| `hlbridge/follow/` | **il bridge**: legge `mario_stato_<STRAT>.csv`, agisce solo sui cambi di posizione, apre con lo stop d'emergenza dal file, chiude il lato sbagliato prima di aprire, passa dal motore di rischio, guarda perdita del giorno e drawdown ogni minuto |
+| `config/bridge.yaml` | quali strategie seguire, su quale perp, quanti micro valgono, che scala, limiti del bridge |
 
-## Cosa manca per il bridge
+## Il bridge
 
-Dall'[audit del 12/11](../docs/audit_2026-11-12.md), prima di mandare un ordine vero:
+```text
+strategia sul grafico → Mario_BridgeStato → mario_stato_<STRAT>.csv → hlbridge follow → perp su Hyperliquid
+```
 
-1. **Il lettore dello stato di MultiCharts**: il file `mario_stato_<STRAT>.csv` del bridge a
-   stato (`multicharts/bridge/SPEC.md`), letto ogni secondo, con un ordine solo quando la
-   posizione voluta cambia.
-2. **Lo stop d'emergenza sull'exchange.** Oggi `_place_stop` parte solo se l'ordine viene
-   eseguito subito; un ordine post-only non lo è mai, e sul testnet 44 posizioni su 44 sono
-   rimaste senza stop.
-3. **Il rischio fra un ordine e l'altro.** `RiskState.observe` va chiamato sullo snapshot
-   periodico, con l'inizio giornata ancorato alla mezzanotte UTC.
-4. **Limiti per strategia.** Il tetto del 5% dell'equity per asset è nato per un book di molti
-   nomi: una posizione sola su un perp ci sbatte subito.
-5. **Un subaccount per strategia**, e un allarme quando il bridge non riesce a seguire MultiCharts.
+Il file è quello del bridge a stato di `multicharts/bridge/SPEC.md` (una riga, `DPB;NQ;-1;120.00;FINE`).
+Le regole sono quelle dell'EA di MT5: agisce solo sui cambi, non riapre se lo stop chiude e MultiCharts
+non cambia, all'avvio non insegue niente (se MultiCharts e Hyperliquid sono diversi lo dice), un cambio
+di size dentro un trade non si copia, cinque tentativi per cambio e poi si ferma e avvisa.
+
+**Gira sul VPS di MultiCharts**, accanto al file. Non su Railway: lì resta solo la pagina di controllo.
+
+```bash
+HL_DEXS=xyz .venv/bin/hlbridge follow            # conto paper, prezzi veri
+HL_DEXS=xyz .venv/bin/hlbridge follow --live     # ordini veri (testnet salvo HL_TESTNET=0)
+```
+
+- **Strumenti.** NQ → `xyz:XYZ100`, il perp del dex HIP-3 `xyz` che segue il Nasdaq-100 (circa $680 milioni
+  al giorno sul mainnet). 1 MNQ vale $2 per punto e 1 unità del perp $1 per punto: `unita_per_micro: 2`.
+  **Da riverificare sulle specifiche del contratto.** Il testnet lista solo `XYZ100`, con volume nullo; ES
+  (`xyz:SP500`) e GC (`xyz:GOLD`) non sono ancora in `bridge.yaml`.
+- **Scala.** `scala: 0.05` copia il 5% della size di MultiCharts: su un demo piccolo non si parte a uno a uno.
+- **Una strategia per perp.** Hyperliquid tiene una posizione netta per perp: DPB e OBO sono entrambe su NQ e la
+  config rifiuta di seguirle insieme. Serve un subaccount per strategia.
+- **Stop.** Dal file, in punti, dal prezzo medio al momento dell'ordine. Se dopo l'apertura il ledger non ha lo
+  stop, il bridge avvisa e non fa altro (vedi sotto).
+- **Chiusura.** `market_close` della posizione intera, poi cancella gli ordini rimasti per quel perp, stop
+  compreso: uno stop vecchio non deve proteggere la posizione dopo.
+- **HIP-3.** Le posizioni e il margine di un dex sono separati da quelli del dex principale: `HLMarket` e
+  l'adapter ora li leggono (`HL_DEXS=xyz`), e il client riceve `perp_dexs`. **Non verificato contro
+  l'exchange**: la prova su testnet è il primo test vero.
+
+## Cosa manca prima di un ordine vero
+
+1. **Lo stop d'emergenza sull'exchange** (dall'audit del 12/11). Oggi `_place_stop` parte solo se l'ordine è
+   eseguito subito; il follower usa ordini IOC, che si eseguono subito, ma se il fill è parziale o l'ordine
+   non entra lo stop non c'è. Sul testnet 44 posizioni su 44 erano rimaste senza stop con gli ordini post-only.
+2. **La prova su testnet con `xyz:XYZ100`.** Cosa verificare: firma e asset id di un perp HIP-3, la lettura delle
+   posizioni per dex, `cancel_asset_orders` (elenco ordini per dex), `market_close`, che il margine del dex
+   sia finanziato, e che 0,1 unità superi il minimo d'ordine.
+3. **Limiti per strategia.** C'è la sezione `limiti` di `bridge.yaml`, vuota: il 2% dell'equity per un perp
+   HIP-3 di `limits.yaml` taglia una posizione sola, e il follower avvisa quando taglia. Il numero giusto lo
+   scegli tu.
+4. **Un subaccount per strategia**, e un allarme quando il bridge non riesce a seguire MultiCharts (oggi avvisa
+   dopo i tentativi falliti, non se il file smette di aggiornarsi).
+5. **Il file in tempo reale.** Mai provato: `Mario_BridgeStato` e l'EA di MT5 sono mai stati compilati (vedi la
+   SPEC del bridge). Il follower è provato solo con file scritti a mano.
 
 ## Uso
 

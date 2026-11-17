@@ -143,7 +143,7 @@ class RingHandler(logging.Handler):
 class DeskService:
     def __init__(self):
         self.settings = settings()
-        self.market = HLMarket(self.settings.data_url)
+        self.market = HLMarket(self.settings.data_url, self.settings.dexs)
         self.ui = self._load_ui_settings()
         self.logs: collections.deque[str] = collections.deque(maxlen=500)
         desk_log = logging.getLogger("hlbridge")
@@ -194,7 +194,7 @@ class DeskService:
                 from hlbridge.execution.hyperliquid import HyperliquidAdapter
                 self._adapter = HyperliquidAdapter(self.settings.base_url, self.settings.account_address,
                                                    self.settings.api_wallet_key,
-                                                   self.settings.unified_collateral)
+                                                   self.settings.unified_collateral, self.settings.dexs)
             else:
                 self._adapter = PaperAdapter()
         return self._adapter

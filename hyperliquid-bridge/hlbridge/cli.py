@@ -1,6 +1,8 @@
 """hlbridge <command>
 
   status [--live]   equity, positions, risk state, kill switch
+  follow [--live]   il bridge: legge i file di stato di MultiCharts e copia la posizione su Hyperliquid
+                    (config/bridge.yaml). Senza --live è un conto paper a prezzi veri
   kill / unkill     engage / release the kill switch (file in var/)
   unlock            clear a drawdown / daily-loss halt
   journal [--kind K] [--last N]
@@ -21,7 +23,7 @@ from hlbridge.risk.state import RiskState, state_path
 
 
 def _market() -> HLMarket:
-    return HLMarket(settings().data_url)
+    return HLMarket(settings().data_url, settings().dexs)
 
 
 def _risk_state(live: bool) -> RiskState:
@@ -41,7 +43,7 @@ def _adapter(live: bool):
         if input().strip() != "MAINNET":
             sys.exit("aborted")
     from hlbridge.execution.hyperliquid import HyperliquidAdapter
-    return HyperliquidAdapter(s.base_url, s.account_address, s.api_wallet_key, s.unified_collateral)
+    return HyperliquidAdapter(s.base_url, s.account_address, s.api_wallet_key, s.unified_collateral, s.dexs)
 
 
 def cmd_status(args):
@@ -55,6 +57,44 @@ def cmd_status(args):
     print(f"peak         {st.peak_equity:,.2f}   halted={st.halted} {st.halt_reason}   kill={RiskState.kill_engaged()}")
     for p in acc.positions:
         print(f"  {p.asset:<12} {p.notional_usd:>12,.2f}  entry {p.entry_px:<12g} mark {p.mark_px:<12g} upnl {p.unrealized_pnl_usd:>9,.2f}  {p.strategy_id or ''}")
+
+
+def cmd_follow(args):
+    import os
+    import time
+
+    from hlbridge.follow.config import load_bridge, merge_limits
+    from hlbridge.follow.follower import Follower
+    from hlbridge.pm.notify import notify
+
+    cfg = load_bridge()
+    folder = cfg.cartella_stati or os.environ.get("BRIDGE_STATE_DIR")
+    if not folder:
+        sys.exit("manca la cartella dei file di stato: cartella_stati in config/bridge.yaml o BRIDGE_STATE_DIR")
+    adapter, market, st = _adapter(args.live), _market(), _risk_state(args.live)
+    f = Follower(cfg, adapter, market, merge_limits(load_limits(), cfg.limiti), st, folder)
+    print(f"bridge: {', '.join(cfg.strategie)} da {folder}, scala {cfg.scala}, "
+          f"{'LIVE ' + ('testnet' if settings().testnet else 'MAINNET') if args.live else 'paper'}")
+    last_marks = last_risk = 0.0
+    told = set()
+    while True:
+        now = time.time()
+        try:
+            if not args.live and now - last_marks > 5:          # the paper account marks at real prices
+                adapter.set_marks({a: c.mid_px for a, c in market.contexts().items()})
+                last_marks = now
+            f.step()
+            if now - last_risk > 60:
+                f.watch_risk()
+                last_risk = now
+        except Exception as e:                                  # noqa: BLE001 - a bridge that dies on one bad read stops following
+            logging.getLogger("hlbridge.follow").exception("passo fallito")
+            if repr(e) not in told:
+                told.add(repr(e))
+                notify(f"Il bridge ha un errore e continua a girare: {e!r}")
+        if args.once:
+            return
+        time.sleep(args.interval)
 
 
 def cmd_kill(args):
@@ -93,6 +133,11 @@ def main(argv=None):
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("status"); s.add_argument("--live", action="store_true"); s.set_defaults(fn=cmd_status)
+    fo = sub.add_parser("follow")
+    fo.add_argument("--live", action="store_true", help="ordini veri (testnet salvo HL_TESTNET=0); senza, conto paper")
+    fo.add_argument("--interval", type=float, default=1.0, help="secondi fra due letture dei file (default 1)")
+    fo.add_argument("--once", action="store_true", help="un solo passo, per provare")
+    fo.set_defaults(fn=cmd_follow)
     sub.add_parser("kill").set_defaults(fn=cmd_kill)
     sub.add_parser("unkill").set_defaults(fn=cmd_unkill)
     ul = sub.add_parser("unlock"); ul.add_argument("--live", action="store_true"); ul.set_defaults(fn=cmd_unlock)

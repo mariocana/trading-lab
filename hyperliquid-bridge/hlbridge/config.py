@@ -20,6 +20,7 @@ load_dotenv(ROOT / ".env")
 class Settings:
     testnet: bool
     unified_collateral: bool            # spot USDC counts as margin (Unified account)
+    dexs: tuple[str, ...]               # HIP-3 dexs to trade on, e.g. ('xyz',): HL_DEXS=xyz
     account_address: str | None
     api_wallet_key: str | None
     telegram_token: str | None
@@ -48,6 +49,7 @@ def settings() -> Settings:
     return Settings(
         testnet=os.environ.get("HL_TESTNET", "1") != "0",
         unified_collateral=os.environ.get("HL_UNIFIED_COLLATERAL", "0") == "1",
+        dexs=tuple(d.strip() for d in os.environ.get("HL_DEXS", "").split(",") if d.strip()),
         account_address=opt("HL_ACCOUNT_ADDRESS"),
         api_wallet_key=opt("HL_API_WALLET_KEY"),
         telegram_token=opt("TELEGRAM_BOT_TOKEN"),
