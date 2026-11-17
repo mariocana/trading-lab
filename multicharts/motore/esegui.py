@@ -44,9 +44,9 @@ def finestra(fase, simbolo):
 def gira(nome, dal, al, inp, molt=1):
     st = STRATEGIE[nome]
     caldo = dal - dt.timedelta(days=st['riscaldamento'])
-    serie = [dati.barre(st['simbolo'], tf, caldo, al) for tf in st['tf']]
+    serie = [dati.barre(st['simbolo'], tf, caldo, al, st.get('ore', 0)) for tf in st['tf']]
     s = st['classe'](*serie[1:], **inp)
-    m = Motore(serie[0], s, punto=st['punto'], comm_lato=st['comm_lato'], molt=molt)
+    m = Motore(serie[0], s, punto=st['punto'], comm_lato=st['comm_lato'], tick=st.get('tick', 0.25), molt=molt)
     tr = m.gira(dt.datetime.combine(dal, dt.time(0, 0)))
     return [t for t in tr if t.nome_out != 'FINE'], s.p, st
 

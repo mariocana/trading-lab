@@ -41,6 +41,10 @@ Simboli: @NQ, @ES (storico fino all'08/10/2026), @GC e @CL (storico da fare). Ti
 | DPB | `DPB_S2_IS_mode0` (2020-2024) | 3.499 | **100%** | 3.499 | $194.110 → $195.440 (+0,7%) | ✅ |
 | OBO | `OBO_S2_IS_2020-2024` | 455 | **100%** | **455** | $182.680 → $182.680 (0,0%) | ✅ |
 | OBO | `OBO_S5_OOS_2025-2026` (fino al 07/10/2026) | 160 | **100%** | 156 | $63.185 → $63.220 (+0,1%) | ✅ |
+| GAR (`pct1`) | `GAR_S4_IS_A_pct1` (IS 2020-2024) | 1.255 | **98,8%** | 1.232 | $86.555 → $83.865 (−3,1%) | ✅ |
+| GAR (`pct1`) | `GAR_S5_OOS_A_pct1_2025-2026` (fino al 02/11/2026) | 353 | **98,6%** | 347 | $166.505 → $168.785 (+1,4%) | ✅ |
+
+**GAR: i report MC dell'oro sono in ora di New York.** Il template era 24/7 con Time Zone Exchange, che su COMEX e' ET: `RangeStart 2000` era 20:00 ET (19:00 Chicago) e `ExitTime 1000` 10:00 ET (09:00 Chicago). Con l'orologio di Chicago il motore ritrovava il 9% dei trade; con i dati spostati di +1 ora (`ore=1` nel registro) il 99%. Su un grafico a Time Zone Local (Chicago) gli stessi input sono `RangeStart 1900`, `RangeEnd 2300`, `ExitTime 900`: con 2000/0/1000 si gira un'altra strategia.
 
 OBO verifica cose che DPB non usa: ADX di Wilder, ATR giornaliero, EMA, ordini d'uscita messi
 insieme all'ingresso (attivi gia' nella barra del fill, `OBO-L-SL0`) e l'arrotondamento al tick di
@@ -52,6 +56,7 @@ report) e un giorno, il 18/07/2024, che nel report MC non c'e' (4 trade in piu' 
 ```bash
 python3 -m motore.calibra dpb strategies/DriftPullback/reports/DPB_S2_IS_mode0.xlsx --diff
 python3 -m motore.calibra obo strategies/OvernightBiasORB/reports/OBO_S2_IS_2020-2024.xlsx --diff
+python3 -m motore.calibra gar strategies/GoldAsianRange/reports/GAR_S4_IS_A_pct1.xlsx --set=MaxRangePct=1 --diff
 ```
 
 ## Nella pipeline (`lab.py`)

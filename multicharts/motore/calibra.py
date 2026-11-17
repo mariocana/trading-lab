@@ -19,9 +19,9 @@ SOGLIA_TRADE, SOGLIA_NET = 0.90, 0.10
 def gira(nome, dal, al, **inp):
     st = STRATEGIE[nome]
     caldo = dal - dt.timedelta(days=st['riscaldamento'])
-    serie = [dati.barre(st['simbolo'], tf, caldo, al) for tf in st['tf']]
+    serie = [dati.barre(st['simbolo'], tf, caldo, al, st.get('ore', 0)) for tf in st['tf']]
     s = st['classe'](*serie[1:], **inp)
-    m = Motore(serie[0], s, punto=st['punto'], comm_lato=st['comm_lato'])
+    m = Motore(serie[0], s, punto=st['punto'], comm_lato=st['comm_lato'], tick=st.get('tick', 0.25))
     return m.gira(dt.datetime.combine(dal, dt.time(0, 0))), st
 
 
@@ -30,12 +30,17 @@ def main():
     if len(arg) < 2:
         raise SystemExit(__doc__)
     nome, report = arg[0], arg[1]
+    inp = {}
+    for x in arg[2:]:
+        if x.startswith('--set='):
+            k, v = x[6:].split('=', 1)
+            inp[k] = float(v) if '.' in v else int(v)
     mc = mc_report.trade(report)
     fine_dati = dati.ultimo_giorno(STRATEGIE[nome]['simbolo'])
     dal = mc[0].t_in.date()
     al = min(mc[-1].t_out.date(), fine_dati - dt.timedelta(days=1))
     mc = [t for t in mc if t.t_out.date() <= al]
-    py, st = gira(nome, dal, al)
+    py, st = gira(nome, dal, al, **inp)
     py = [t for t in py if t.t_out.date() <= al and t.nome_out != 'FINE']
 
     chiave = lambda t: (t.t_in, t.lato)

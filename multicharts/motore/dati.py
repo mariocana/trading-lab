@@ -111,19 +111,24 @@ def aggrega(mins, tf):
     return out
 
 
-def barre(simbolo, tf, dal, al):
-    """Barre da tf minuti, con cache. dal/al: date."""
+def barre(simbolo, tf, dal, al, ore=0):
+    """Barre da tf minuti, con cache. dal/al: date. ore: sposta l'orologio dei dati (es. 1 =
+    Chicago -> New York, per i report MC fatti con Time Zone Exchange su COMEX)."""
     firma = []
     for p in (file_1min(simbolo), file_recente(simbolo)):
         if os.path.exists(p):
             st = os.stat(p)
             firma.append('%d_%d' % (int(st.st_mtime), st.st_size))
-    nome = '%s_%d_%s_%s_%s.pkl' % (simbolo, tf, dal, al, '_'.join(firma))
+    nome = '%s_%d_%s_%s_%s%s.pkl' % (simbolo, tf, dal, al, '_'.join(firma), '_h%d' % ore if ore else '')
     cp = os.path.join(CACHE, nome)
     if os.path.exists(cp):
         with open(cp, 'rb') as f:
             return pickle.load(f)
-    b = aggrega(minuti(simbolo, dal, al), tf)
+    mins = minuti(simbolo, dal, al)
+    if ore:
+        d = dt.timedelta(hours=ore)
+        mins = [(r[0] + d,) + r[1:] for r in mins]
+    b = aggrega(mins, tf)
     os.makedirs(CACHE, exist_ok=True)
     with open(cp, 'wb') as f:
         pickle.dump(b, f, protocol=pickle.HIGHEST_PROTOCOL)
