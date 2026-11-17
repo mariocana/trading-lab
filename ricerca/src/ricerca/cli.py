@@ -5,6 +5,9 @@
                                 un'idea esiste: una cartella in idee/ e una riga nel registro.
                                 Rifiutata se è fuori dal perimetro di perimetro.yaml. La
                                 destinazione (prop se non la dici) decide i minimi della misura
+    ricerca fonti <id>          il muro: cosa c'è in idee/<id>/fonti/ prima che un agente la legga.
+                                Rifiuta se trova una nostra misura; elenca i numeri di
+                                performance da controllare a mano
     ricerca measure <id>        registra idee/<id>/misura.json (scritto da
                                 `python3 -m motore.misura <id> --json`): uno sguardo contato.
                                 Rifiutata oltre il tetto mensile; stampa SOPRA / SOTTO SOGLIA
@@ -22,6 +25,7 @@ import json
 import sys
 from pathlib import Path
 
+from ricerca.fonti import scan
 from ricerca.perimetro import DEFAULT_DESTINATION, load_perimeter, this_month
 from ricerca.registry import Registry
 
@@ -71,6 +75,27 @@ def cmd_idea(a):
     d.mkdir(parents=True)
     (d / "hypothesis.md").write_text(HYPOTHESIS_TEMPLATE.format(id=a.id))
     print(f"idea {a.id} registrata ({a.door}, {a.horizon}, {a.market}, {a.destination}); creato ricerca/idee/{a.id}/hypothesis.md")
+
+
+def cmd_fonti(a):
+    d = _dir(a.id) / "fonti"
+    if not d.exists():
+        print(f"ricerca/idee/{a.id}/fonti non esiste: nessuna fonte da controllare")
+        return
+    nostre, numeri, non_letti = scan(d)
+    corta = lambda r: r if len(r) <= 150 else r[:147] + "..."
+    if numeri:
+        print(f"numeri di performance, {len(numeri)} righe: controlla che li dichiari la fonte e non noi")
+        for f, i, r in numeri:
+            print(f"  {f}:{i}  {corta(r)}")
+    if non_letti:
+        print("non letti (non sono testo, aprili tu): " + ", ".join(non_letti))
+    if nostre:
+        print(f"NOSTRE MISURE, {len(nostre)} righe: toglile prima di chiamare un agente")
+        for f, i, r in nostre:
+            print(f"  {f}:{i}  {corta(r)}")
+        sys.exit(f"fonti di {a.id} non pulite")
+    print(f"fonti di {a.id}: nessuna nostra misura trovata")
 
 
 def cmd_measure(a):
@@ -133,6 +158,9 @@ def main():
                    help="prop o live, come in perimetro.yaml: decide i minimi della misura")
     p.add_argument("--parent")
     p.set_defaults(fn=cmd_idea)
+    p = sub.add_parser("fonti")
+    p.add_argument("id")
+    p.set_defaults(fn=cmd_fonti)
     p = sub.add_parser("measure")
     p.add_argument("id")
     p.set_defaults(fn=cmd_measure)

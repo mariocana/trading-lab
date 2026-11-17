@@ -128,3 +128,21 @@ def test_un_idea_nata_prima_delle_destinazioni_e_prop(lab, capsys):
     (lab / "idee" / "vecchia" / "misura.json").write_text(json.dumps(POCHI_DOLLARI))
     cli.cmd_measure(args(id="vecchia"))
     assert "destinazione prop: SOTTO SOGLIA" in capsys.readouterr().out
+
+
+def test_le_fonti_con_una_nostra_misura_non_passano(lab, capsys):
+    cli.cmd_idea(args())
+    d = lab / "idee" / "fine_mese" / "fonti"
+    d.mkdir()
+    (d / "idea.md").write_text(
+        "> nota del desk: la misura del desk e stata tolta\n"
+        "# Idea\nL'autore dichiara 823 trade, WR 58%, PF 1.28.\nMax 1 trade al giorno, stop 90 punti.\n")
+    (d / "paper.pdf").write_bytes(b"%PDF")
+    cli.cmd_fonti(args())
+    out = capsys.readouterr().out
+    assert "idea.md:3" in out and "paper.pdf" in out and "nessuna nostra misura" in out
+    assert "idea.md:4" not in out and "idea.md:1" not in out       # una regola e una nota del desk non sono numeri
+    (d / "idea.md").write_text("## Contaminazione\nIl desk ha già misurato l'IS: 257 lunedì, t 2,51.\n")
+    with pytest.raises(SystemExit, match="non pulite"):
+        cli.cmd_fonti(args())
+    assert "idea.md:2" in capsys.readouterr().out

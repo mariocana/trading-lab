@@ -163,6 +163,26 @@ differenza è in [`prop_vs_live.md`](../multicharts/docs/prop_vs_live.md).
 - **Il minimo del live è una scelta da rivedere.** Togliere i dollari al giorno e tenere i 3
   errori standard è il punto di partenza scelto il 17/11, non un numero derivato da un conto.
 
+### Due controlli fatti dal codice (aggiunti il 17/11)
+
+Sono nati da due errori del giro di Monday Long.
+
+| controllo | comando | cosa fa |
+|---|---|---|
+| Il muro sulle fonti | `ricerca fonti <id>` | legge `idee/<id>/fonti/` prima che un agente la apra. Rifiuta se trova righe che parlano di una nostra misura; elenca le righe con numeri di performance, da controllare a mano |
+| La meccanica | `python3 -m motore.meccanica <id>` | gira l'in-sample e stampa solo conteggi, giorni e orari. È il controllo che il coder può fare da solo |
+
+- **L'errore del muro.** Il desk aveva passato al ricercatore la SPEC intera di Monday Long, con
+  dentro una misura del 10/11. Sulla SPEC intera il comando trova 15 righe e rifiuta.
+- **L'errore della meccanica.** Il controllo del coder passava da uno script suo, che i permessi
+  hanno bloccato; l'ha fatto il desk. Il comando non stampa prezzi, punti o dollari, e non conta
+  le uscite per segnale: target contro stop sarebbe un win rate.
+- **Il limite.** `ricerca fonti` cerca parole e forme, non capisce il testo: una riga che passa
+  può ancora dire troppo, e i PDF non li legge. Il muro resta una regola che il desk segue.
+- **Strategia già in pipeline.** Se `lab.py cerca` trova la stessa strategia in `/lab`, il desk
+  si ferma e chiede prima di registrarla.
+- **Modelli.** Dal 17/11 critico e coder girano su Sonnet, il ricercatore su Opus.
+
 ## Le due porte
 
 | | parte da | cosa fa il ricercatore |

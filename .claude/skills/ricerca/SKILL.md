@@ -56,8 +56,30 @@ cd ricerca && poetry run ricerca idea <id> --title "<titolo>" --door user|resear
 Se il comando rifiuta (`fuori dal perimetro`), l'idea non esiste: dillo a Mario, con il motivo.
 Non cambiare `perimetro.yaml` per farla entrare: il perimetro lo cambia Mario, con un commit.
 
+**Se la strategia è già in pipeline, fermati prima di registrarla.** Quando `lab.py cerca`
+mostra la stessa strategia fra quelle di `pipeline_status.json` (non una simile: la stessa),
+di' a Mario a che stage è e chiedigli se vuole comunque passarla dal desk. Se dice sì, la misura
+sarà uno sguardo in più al suo in-sample: scrivilo nel dossier, perché `/lab` lo aggiunga alla
+contaminazione della SPEC.
+
 Un paper: salvalo in `ricerca/idee/<id>/fonti/` (il PDF che Mario indica, o il link in un
 file `link.txt`) prima di chiamare il ricercatore.
+
+**Le fonti si controllano prima di chiamare un agente**, ogni volta che cambiano:
+
+```bash
+cd ricerca && poetry run ricerca fonti <id>
+```
+
+- Se rifiuta (`NOSTRE MISURE`), togli quelle righe dalla fonte e lascia in cima una nota che
+  comincia con `>` e dice cosa hai tolto, senza numeri. Poi rilancia.
+- Le righe sotto `numeri di performance` leggile una per una: restano solo se è la fonte a
+  dichiararle (un paper, l'autore di un corso), non se le abbiamo misurate noi.
+- I file che non legge (PDF) aprili tu.
+- Una SPEC di `multicharts/strategies/` non si copia intera: solo ipotesi, fonti e regole. Le
+  sezioni su contaminazione, rischi e criteri per fase portano misure e restano fuori.
+
+Il comando è un setaccio largo, non una prova: la responsabilità del muro resta tua.
 
 **Fermati dopo i passi 3, 5 e 6** e di' a Mario l'esito in parole semplici.
 
@@ -71,6 +93,10 @@ file `link.txt`) prima di chiamare il ricercatore.
 - **KILL al passo 3** chiude l'idea:
   `poetry run ricerca kill <id> --step critic --reason "<la ragione del critico>"`.
   Se Mario non è d'accordo, la strada è un'idea nuova con `--parent`, mai un secondo giro.
+- **Dopo il passo 4 controlla tu la meccanica**, prima di committare il codice e di misurare:
+  `PYTHONPATH=multicharts python3 -m motore.meccanica <id>`. Il numero di trade contro quello
+  atteso dall'ipotesi, giorni e orari. Se non torna, rimanda al coder l'errore, senza numeri di
+  performance (non ne hai ancora visti).
 - **Il passo 4 non è un giudizio.** Se la regola è ambigua il coder si ferma: torna al
   ricercatore solo per chiarire quello che c'era già scritto. Una regola cambiata è un'idea nuova.
 - **Il passo 5**, dalla radice del repository:
