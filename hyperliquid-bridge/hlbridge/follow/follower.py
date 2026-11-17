@@ -35,10 +35,15 @@ DUST_USD = 1.0           # a residue under this is a rounding crumb, not a posit
 
 class Follower:
     def __init__(self, cfg: BridgeConfig, adapter, market, limits: dict, state, state_dir: Path,
-                 journal: Callable = journal_record, notify: Callable = pm_notify):
+                 journal: Callable = journal_record, notify: Callable = pm_notify,
+                 venue_mid: Callable[[str], float | None] | None = None):
         self.cfg, self.adapter, self.market, self.limits, self.state = cfg, adapter, market, limits, state
         self.dir = Path(state_dir)
         self.journal, self.notify = journal, notify
+        # Where the order will rest. The risk and liquidity rules read the main feed, but the size in dollars and the
+        # stop price have to come from the venue: on testnet XYZ100 sat 13% away from mainnet (30,613 vs 26,995),
+        # which would put a short's stop below the market and fire it on the spot.
+        self.venue_mid = venue_mid
         self.last: dict[str, Wanted] = {}         # last state read, per strategy
         self.pending: dict[str, Wanted] = {}      # a change not carried out yet
         self.attempts: dict[str, int] = {}
@@ -124,6 +129,9 @@ class Follower:
             self.notify(f"{name}: su {perp} c'è una posizione che non è nostra ({pos.size:+g}). Non la tocco.")
             self.journal("follow_foreign_position", {"strategy": name, "perp": perp, "size": pos.size})
             return
+        px = self.venue_mid(perp) if self.venue_mid else None
+        if px:
+            ctx = ctx.model_copy(update={"mid_px": px, "mark_px": px})
         target = self._target(name, w, ctx.sz_decimals)
         cur = pos.size if pos else 0.0
         if cur != 0 and abs(cur) * ctx.mid_px < DUST_USD:

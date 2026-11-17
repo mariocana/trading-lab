@@ -298,3 +298,17 @@ def test_i_limiti_del_bridge_stanno_sopra_quelli_del_desk():
     m = merge_limits({"a": 1, "max_notional_pct_equity": {"crypto": 0.05, "hip3": 0.02}},
                      {"max_notional_pct_equity": {"hip3": 0.5}})
     assert m == {"a": 1, "max_notional_pct_equity": {"crypto": 0.05, "hip3": 0.5}}
+
+
+def test_la_size_e_lo_stop_si_prezzano_dove_riposa_l_ordine(env):
+    # sul testnet XYZ100 stava a 30.613 contro i 26.995 del mainnet: con il prezzo sbagliato lo stop di uno
+    # short finiva sotto il mercato e scattava subito
+    env.write("DPB;NQ;0;0;FINE")
+    f = env.build()
+    f.venue_mid = lambda perp: 30_000.0
+    f.step()
+    env.write("DPB;NQ;-1;120;FINE")
+    f.step()
+    (intent,) = env.adapter.intents
+    assert intent.stop_px == pytest.approx(30_000.0 + 120)
+    assert intent.notional_usd == pytest.approx(0.1 * 30_000.0)

@@ -54,9 +54,11 @@ class HyperliquidAdapter(ExecutionAdapter):
         if not account_address.startswith("0x") or len(account_address) != 42:
             raise SystemExit(f"HL_ACCOUNT_ADDRESS does not look like an address: {account_address!r}")
         self.address = account_address
-        # perp_dexs: without it the SDK does not know the asset ids of HIP-3 perps ('xyz:XYZ100')
+        # perp_dexs: without it the SDK does not know the asset ids of HIP-3 perps ('xyz:XYZ100'). With it the
+        # SDK loads ONLY the dexs listed, so the main dex ('') has to be in the list or BTC and the rest stop
+        # resolving (checked against the SDK: {'xyz'} -> BTC unknown, {'', 'xyz'} -> BTC 0, xyz:XYZ100 110000).
         self.exchange = Exchange(wallet, base_url, account_address=account_address,
-                                 perp_dexs=list(dexs) if dexs else None)
+                                 perp_dexs=["", *dexs] if dexs else None)
         self.info: Info = self.exchange.info
         # account reads and asset metadata come from the venue we execute on,
         # not from the (mainnet) data feed the strategy looks at

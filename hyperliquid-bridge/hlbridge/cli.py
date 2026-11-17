@@ -72,7 +72,13 @@ def cmd_follow(args):
     if not folder:
         sys.exit("manca la cartella dei file di stato: cartella_stati in config/bridge.yaml o BRIDGE_STATE_DIR")
     adapter, market, st = _adapter(args.live), _market(), _risk_state(args.live)
-    f = Follower(cfg, adapter, market, merge_limits(load_limits(), cfg.limiti), st, folder)
+    def venue_mid(perp):                                    # where the order rests, not the mainnet feed
+        try:
+            return adapter.venue.book_depth_10bps(perp)[0]
+        except Exception:                                   # noqa: BLE001
+            return None
+    f = Follower(cfg, adapter, market, merge_limits(load_limits(), cfg.limiti), st, folder,
+                 venue_mid=venue_mid if args.live else None)
     print(f"bridge: {', '.join(cfg.strategie)} da {folder}, scala {cfg.scala}, "
           f"{'LIVE ' + ('testnet' if settings().testnet else 'MAINNET') if args.live else 'paper'}")
     last_marks = last_risk = 0.0

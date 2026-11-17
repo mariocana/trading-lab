@@ -57,8 +57,13 @@ HL_DEXS=xyz .venv/bin/hlbridge follow --live     # ordini veri (testnet salvo HL
 - **Chiusura.** `market_close` della posizione intera, poi cancella gli ordini rimasti per quel perp, stop
   compreso: uno stop vecchio non deve proteggere la posizione dopo.
 - **HIP-3.** Le posizioni e il margine di un dex sono separati da quelli del dex principale: `HLMarket` e
-  l'adapter ora li leggono (`HL_DEXS=xyz`), e il client riceve `perp_dexs`. **Non verificato contro
-  l'exchange**: la prova su testnet è il primo test vero.
+  l'adapter ora li leggono (`HL_DEXS=xyz`). Il client riceve `perp_dexs=['', 'xyz']`: l'SDK carica **solo** i
+  dex elencati, quindi senza `''` BTC e gli altri non si risolverebbero. Controllato contro l'SDK, non
+  contro un ordine: `xyz:XYZ100` ha asset id 110000 sul mainnet e 750000 sul testnet.
+- **Il prezzo viene dal posto dove riposa l'ordine.** Sul testnet `XYZ100` sta a 30.613 e sul mainnet a 26.995
+  (13% di differenza): con il prezzo del mainnet lo stop di uno short finiva sotto il mercato e scattava
+  subito. Con `--live` la size in dollari e lo stop usano il book di esecuzione; i limiti di liquidità
+  (volume, profondità) restano quelli del mainnet, perché il testnet non ha volume.
 
 ## Cosa manca prima di un ordine vero
 
@@ -73,7 +78,14 @@ HL_DEXS=xyz .venv/bin/hlbridge follow --live     # ordini veri (testnet salvo HL
    scegli tu.
 4. **Un subaccount per strategia**, e un allarme quando il bridge non riesce a seguire MultiCharts (oggi avvisa
    dopo i tentativi falliti, non se il file smette di aggiornarsi).
-5. **Il file in tempo reale.** Mai provato: `Mario_BridgeStato` e l'EA di MT5 sono mai stati compilati (vedi la
+5. **`watch_risk` chiude tutto il conto.** Se la perdita del giorno supera il limite chiama `flatten_all`, che
+   chiude anche posizioni che non sono del bridge e cancella tutti gli ordini. Prima di questo commit nessuno
+   consumava quel flag. Se debba chiudere tutto o solo i perp del bridge lo decidi tu.
+6. **Nessun avviso se il file non si legge mai.** Con la cartella sbagliata o una codifica diversa il bridge
+   sembra vivo e non fa niente: serve un avviso quando un file non si aggiorna o non esiste da troppo.
+7. **Windows.** Il comando di `follow` sul VPS non è mai stato lanciato lì: i percorsi qui sopra sono quelli
+   di macOS (`.venv/Scripts/` su Windows).
+8. **Il file in tempo reale.** Mai provato: `Mario_BridgeStato` e l'EA di MT5 sono mai stati compilati (vedi la
    SPEC del bridge). Il follower è provato solo con file scritti a mano.
 
 ## Uso
