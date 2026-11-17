@@ -1179,6 +1179,10 @@
  ],
  "log": [
   {
+   "date": "2026-11-17",
+   "text": "**GAR nel motore e fuso dell'oro.** Port `motore/strategie/gar.py`, calibrato su `pct1`: IS 2020-2024 98,8% dei trade MC ritrovati, net −3,1%; OOS fino al 02/11/2026 98,6%, net +1,4% (soglia 90% / 10%). **I report MC dell'oro sono in ora di New York** (template 24/7 con Time Zone Exchange, che su COMEX è ET): `RangeStart 2000` = 19:00 Chicago, `ExitTime 1000` = 09:00 Chicago. Il motore li ritrova solo spostando i dati di +1 ora (`ore=1`); con Chicago il 9%. **Il grafico live ha girato a Time Zone Local (Chicago) con gli stessi input fino al 17/11**: gli ordini live del 10-17/11 hanno livelli e uscite di Chicago, il 13/11 e il 17/11 sono operazioni diverse dal backtest (il 13 il filtro pct1 lo avrebbe saltato, il 17 segno opposto). Il 17/11 il grafico è stato messo su Exchange; da verificare sugli ordini del 18/11. Bridge: ogni cambio di MC ha il suo fill su MT5 entro 1-2 secondi (10-17/11); il GAR del 10/11 è stato aperto con 14 minuti di ritardo per l'errore dei 60 micro, non saltato. Prezzo di fill nel file sempre 0: aggiunto un ripiego nell'EA (30efbb6), da ricompilare e provare sul VPS."
+  },
+  {
    "date": "2026-11-12",
    "text": "**FAQ FTMO e primi dati del bridge.** Split del 2-Step all'80% (non 90%): EV per tentativo 2-Step 50k $17.098 sull'OOS, $3.541 nello stress. EA permessi, ma la regola dell'Allocazione Massima di Capitale può negare il funded se molti usano la stessa strategia. Free trial 05-12/11: 23 trade, +$1.269; size e stop d'emergenza corretti; DPB 16 vinti su 20 (fortuna, 11%). **Da controllare:** Gold esce alle 10:00 di Chicago invece che di New York; manca il report del grafico per misurare lo scarto CFD-grafico. Trade in `bridge/test/`."
   },
