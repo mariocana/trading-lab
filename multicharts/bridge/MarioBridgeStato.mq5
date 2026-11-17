@@ -91,7 +91,19 @@ double PrezzoEseguito()
 {
    ulong deal = trade.ResultDeal();
    if(deal > 0 && HistoryDealSelect(deal)) return HistoryDealGetDouble(deal, DEAL_PRICE);
-   return trade.ResultPrice();
+   double p = trade.ResultPrice();
+   if(p > 0) return p;
+   // alcuni broker restituiscono 0 subito dopo l'ordine: si prende l'ultimo deal degli ultimi 2 minuti
+   if(HistorySelect(TimeCurrent() - 120, TimeCurrent() + 60))
+   {
+      int n = HistoryDealsTotal();
+      if(n > 0)
+      {
+         ulong t = HistoryDealGetTicket(n - 1);
+         if(t > 0) return HistoryDealGetDouble(t, DEAL_PRICE);
+      }
+   }
+   return 0;
 }
 
 void Registra(string nome, string azione, string simbolo, double lotti, double prezzo)
