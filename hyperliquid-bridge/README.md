@@ -106,8 +106,13 @@ di esecuzione il follower ordinava al prezzo del mainnet; ora non ordina se non 
    di controllo continua a chiudere tutto. La perdita però si misura sull'equity dell'intero account, quindi
    la perdita di un'altra posizione può fermare il bridge. Misurarla solo sul bridge richiede il P&L per
    strategia, che non c'è: la risposta pulita è un subaccount per strategia.
-6. **Nessun avviso se il file non si legge mai.** Con la cartella sbagliata o una codifica diversa il bridge
-   sembra vivo e non fa niente: serve un avviso quando un file non si aggiorna o non esiste da troppo.
+6. **Un file che non si legge avvisa** (dal 18/11): se un file di stato manca, è vuoto o ha un formato sbagliato per più
+   di `file_illeggibile_secondi` (60), il bridge scrive su Telegram perché (la cartella non esiste, il file non c'è,
+   la riga che ha letto) e avvisa di nuovo quando torna leggibile. MultiCharts riscrive il file cancellandolo e
+   riscrivendolo, quindi un buco di un attimo non conta. **Un file fermo non è un allarme**: si riscrive solo quando
+   la posizione cambia, e una strategia flat lo lascia com'è per giorni. Non c'è quindi modo di accorgersi che
+   MultiCharts o il suo indicatore sono morti: servirebbe un battito nel file, cioè una modifica a
+   `Mario_BridgeStato.txt`, che non è mai stato compilato.
 7. **Windows.** Il comando di `follow` sul VPS non è mai stato lanciato lì: i percorsi qui sopra sono quelli
    di macOS (`.venv/Scripts/` su Windows).
 8. **Il file in tempo reale.** Mai provato: `Mario_BridgeStato` e l'EA di MT5 sono mai stati compilati (vedi la

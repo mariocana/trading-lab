@@ -352,3 +352,72 @@ def test_il_limite_di_perdita_non_chiude_le_posizioni_che_non_sono_del_bridge(en
     assert size(env) == 0                                            # il perp del bridge e' chiuso
     btc = env.adapter.account_state().position("BTC")
     assert btc is not None and btc.size != 0                         # l'altra posizione no
+
+
+class Orologio:
+    def __init__(self):
+        self.t = 1000.0
+
+    def __call__(self):
+        return self.t
+
+
+def test_un_file_che_non_si_legge_piu_di_un_minuto_avvisa_una_volta_e_dice_perche(env):
+    clock = Orologio()
+    f = env.build()
+    f.clock = clock
+    f.step()                                                    # il file non c'e'
+    clock.t += 30
+    f.step()
+    assert env.said == []                                       # un attimo non e' un allarme
+    clock.t += 31
+    f.step(); f.step()
+    avvisi = [s for s in env.said if "non si legge" in s]
+    assert len(avvisi) == 1 and "il file non c'è" in avvisi[0]
+    env.write("DPB;NQ;0;0;FINE")
+    f.step()
+    assert any("torna leggibile" in s for s in env.said)
+
+
+def test_un_formato_sbagliato_si_dice_con_la_riga_che_si_e_letta(env):
+    clock = Orologio()
+    env.write("DPB;NQ;1;120")                                   # sempre senza FINE
+    f = env.build()
+    f.clock = clock
+    f.step()
+    clock.t += 61
+    f.step()
+    (avviso,) = [s for s in env.said if "non si legge" in s]
+    assert "DPB;NQ;1;120" in avviso and "FINE" in avviso
+
+
+def test_un_file_che_non_cambia_da_giorni_non_e_un_allarme(env):
+    clock = Orologio()
+    env.write("DPB;NQ;0;0;FINE")
+    f = env.build()
+    f.clock = clock
+    for _ in range(5):
+        f.step()
+        clock.t += 86_400
+    assert env.said == []
+
+
+def test_il_buco_di_una_riscrittura_non_avvisa_e_un_secondo_buco_si(env):
+    clock = Orologio()
+    env.write("DPB;NQ;0;0;FINE")
+    f = env.build()
+    f.clock = clock
+    f.step()
+    for _ in range(2):
+        (env.dir / "mario_stato_DPB.csv").unlink()              # FileDelete ... FileAppend
+        clock.t += 2
+        f.step()
+        env.write("DPB;NQ;0;0;FINE")
+        clock.t += 2
+        f.step()
+    assert env.said == []
+    (env.dir / "mario_stato_DPB.csv").unlink()
+    f.step()                                                    # il bridge se ne accorge qui...
+    clock.t += 100
+    f.step()                                                    # ...e cento secondi dopo e' ancora cosi'
+    assert len([s for s in env.said if "non si legge" in s]) == 1

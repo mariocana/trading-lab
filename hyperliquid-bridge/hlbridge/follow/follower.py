@@ -18,11 +18,12 @@ chiusura passa sempre.
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 from typing import Callable
 
 from hlbridge.follow.config import BridgeConfig
-from hlbridge.follow.stato import Wanted, read_state
+from hlbridge.follow.stato import Wanted, diagnose, read_state
 from hlbridge.journal.log import record as journal_record
 from hlbridge.pm.notify import notify as pm_notify
 from hlbridge.risk import engine
@@ -36,7 +37,7 @@ DUST_USD = 1.0           # a residue under this is a rounding crumb, not a posit
 class Follower:
     def __init__(self, cfg: BridgeConfig, adapter, market, limits: dict, state, state_dir: Path,
                  journal: Callable = journal_record, notify: Callable = pm_notify,
-                 venue_mid: Callable[[str], float | None] | None = None):
+                 venue_mid: Callable[[str], float | None] | None = None, clock: Callable[[], float] = time.time):
         self.cfg, self.adapter, self.market, self.limits, self.state = cfg, adapter, market, limits, state
         self.dir = Path(state_dir)
         self.journal, self.notify = journal, notify
@@ -47,6 +48,9 @@ class Follower:
         self.last: dict[str, Wanted] = {}         # last state read, per strategy
         self.pending: dict[str, Wanted] = {}      # a change not carried out yet
         self.attempts: dict[str, int] = {}
+        self.clock = clock
+        self.unreadable_since: dict[str, float] = {}   # when a file stopped being readable
+        self.unreadable_told: set[str] = set()
         self._said: set[tuple[str, str]] = set()
 
     # ---- one pass ------------------------------------------------------------
@@ -54,7 +58,7 @@ class Follower:
     def step(self) -> None:
         for name, scfg in self.cfg.strategie.items():
             w = read_state(self.dir / scfg.file)
-            if w is None:
+            if not self._watch_file(name, scfg.file, w):
                 continue
             if w.strategy != name or w.instrument != scfg.strumento:
                 self._once(name, "shape", f"{name}: il file dice {w.strategy}/{w.instrument}, "
@@ -98,6 +102,28 @@ class Follower:
                         "limite di perdita; il resto del conto non è toccato. Il bridge non apre finché non lo sblocchi.")
             self.journal("follow_flatten", {"closed": closed})
         self.state.save()
+
+    # ---- a file that cannot be read -------------------------------------------
+
+    def _watch_file(self, name: str, fname: str, w: Wanted | None) -> bool:
+        """True when there is a state to act on. A file MultiCharts is rewriting (it deletes and appends) is
+        unreadable for a moment, so only a longer silence counts. The file is rewritten only when the
+        position changes, so a flat strategy leaves it untouched for days: an old file is not a finding,
+        a missing or garbled one is."""
+        now = self.clock()
+        if w is not None:
+            if name in self.unreadable_told:
+                self.unreadable_told.discard(name)
+                self.notify(f"{name}: il file di stato torna leggibile.")
+            self.unreadable_since.pop(name, None)
+            return True
+        since = self.unreadable_since.setdefault(name, now)
+        if now - since >= self.cfg.file_illeggibile_secondi and name not in self.unreadable_told:
+            self.unreadable_told.add(name)
+            self.notify(f"{name}: il file di stato non si legge da {now - since:.0f} secondi: "
+                        f"{diagnose(self.dir / fname)}. Il bridge non vede cosa vuole MultiCharts.")
+            self.journal("follow_file_unreadable", {"strategy": name, "file": fname, "seconds": round(now - since)})
+        return False
 
     # ---- the start: look, don't chase ---------------------------------------
 

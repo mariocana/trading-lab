@@ -25,6 +25,7 @@ class BridgeConfig(BaseModel):
     cartella_stati: str | None = None           # dove MultiCharts scrive i file; oppure $BRIDGE_STATE_DIR
     scala: float = Field(gt=0, le=1.0)          # frazione della size di MultiCharts: 1.0 = una a una
     slittamento_max_bps: float = Field(default=20.0, gt=0)   # quanto lontano dal prezzo medio si spinge l'ordine IOC per farsi riempire
+    file_illeggibile_secondi: float = Field(default=60.0, gt=0)   # oltre, un file che non si legge è un allarme
     tentativi: int = Field(default=5, ge=1)     # per cambio di posizione, poi si ferma fino al cambio successivo
     strumenti: dict[str, Instrument]
     strategie: dict[str, StrategyCfg]

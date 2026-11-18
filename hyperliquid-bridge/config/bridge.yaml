@@ -13,6 +13,11 @@ scala: 0.05
 
 tentativi: 5
 
+# Un file di stato che non si legge da più di questo (manca, vuoto, formato sbagliato) avvisa. MultiCharts lo
+# riscrive cancellandolo e riscrivendolo: un buco di un attimo non conta. Un file fermo non è un allarme: si
+# riscrive solo quando la posizione cambia.
+file_illeggibile_secondi: 60
+
 # Quanto lontano dal prezzo medio si spinge l'ordine per farsi riempire (IOC). 20 è il valore dell'adapter.
 # Sul testnet, dove il book di XYZ100 è largo il 16%, non basta: per la prova si alza.
 slittamento_max_bps: 20

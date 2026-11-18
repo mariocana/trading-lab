@@ -43,3 +43,18 @@ def read_state(path: Path) -> Wanted | None:
     except OSError:
         return None
     return parse_line(lines[-1]) if lines else None
+
+
+def diagnose(path: Path) -> str:
+    """Why `read_state` found nothing, in words for an alert."""
+    if not path.parent.exists():
+        return f"la cartella {path.parent} non esiste"
+    if not path.exists():
+        return "il file non c'è"
+    try:
+        lines = [l for l in path.read_text(errors="replace").splitlines() if l.strip()]
+    except OSError as e:
+        return f"non si apre ({e.__class__.__name__})"
+    if not lines:
+        return "il file è vuoto"
+    return f"l'ultima riga non è nel formato (STRAT;STRUM;POS;STOP;FINE): {lines[-1][:60]!r}"
