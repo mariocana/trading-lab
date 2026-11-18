@@ -24,7 +24,7 @@ tolti: restano in git fino al commit `74ae180`.
 | `hlbridge/data/market_record.py` | ogni ora lo stato grezzo del mercato in `var/market/`, per quantlake: open interest e listini non si riscaricano |
 | `hlbridge/journal/`, `hlbridge/pm/` | journal append-only e avvisi Telegram |
 | `hlbridge/ui/` | pagina di controllo: conto, posizioni, limiti, kill switch, chiusura di tutto |
-| `hlbridge/follow/` | **il bridge**: legge `mario_stato_<STRAT>.csv`, agisce solo sui cambi di posizione, apre con lo stop d'emergenza dal file, chiude il lato sbagliato prima di aprire, passa dal motore di rischio, guarda perdita del giorno e drawdown ogni minuto |
+| `hlbridge/follow/` | **il bridge**: legge `mario_stato_<STRAT>.csv`, agisce solo sui cambi di posizione, apre con lo stop d'emergenza dal file, chiude il lato sbagliato prima di aprire, passa dal motore di rischio, guarda perdita del giorno e drawdown ogni minuto e al limite chiude i suoi perp |
 | `config/bridge.yaml` | quali strategie seguire, su quale perp, quanti micro valgono, che scala, limiti del bridge |
 
 ## Il bridge
@@ -101,9 +101,11 @@ di esecuzione il follower ordinava al prezzo del mainnet; ora non ordina se non 
    scegli tu.
 4. **Un subaccount per strategia**, e un allarme quando il bridge non riesce a seguire MultiCharts (oggi avvisa
    dopo i tentativi falliti, non se il file smette di aggiornarsi).
-5. **`watch_risk` chiude tutto il conto.** Se la perdita del giorno supera il limite chiama `flatten_all`, che
-   chiude anche posizioni che non sono del bridge e cancella tutti gli ordini. Prima di questo commit nessuno
-   consumava quel flag. Se debba chiudere tutto o solo i perp del bridge lo decidi tu.
+5. **`watch_risk` chiude solo i perp del bridge** (dal 18/11). Se la perdita del giorno supera il limite
+   chiude i perp di `bridge.yaml` e i loro ordini, non il resto del conto: il kill switch manuale della pagina
+   di controllo continua a chiudere tutto. La perdita però si misura sull'equity dell'intero account, quindi
+   la perdita di un'altra posizione può fermare il bridge. Misurarla solo sul bridge richiede il P&L per
+   strategia, che non c'è: la risposta pulita è un subaccount per strategia.
 6. **Nessun avviso se il file non si legge mai.** Con la cartella sbagliata o una codifica diversa il bridge
    sembra vivo e non fa niente: serve un avviso quando un file non si aggiorna o non esiste da troppo.
 7. **Windows.** Il comando di `follow` sul VPS non è mai stato lanciato lì: i percorsi qui sopra sono quelli

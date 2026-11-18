@@ -287,7 +287,7 @@ def test_una_perdita_oltre_il_limite_chiude_tutto_e_blocca(env):
     env.state.day_start_equity = 200_000.0          # il conto e' a -50% sul giorno
     f.watch_risk()
     assert size(env) == 0 and env.state.halted and not env.state.flatten_requested
-    assert any("Chiuse 1 posizioni" in s for s in env.said)
+    assert any("Chiuse 1 posizioni del bridge (xyz:XYZ100)" in s for s in env.said)
     env.write("DPB;NQ;-1;120;FINE")                 # MultiCharts cambia: il rischio blocca l'apertura
     f.step()
     assert size(env) == 0
@@ -335,3 +335,20 @@ def test_se_il_prezzo_di_esecuzione_manca_non_si_ordina_al_prezzo_del_mainnet(en
     f.step()
     assert size(env) == 0 and env.adapter.intents == []
     assert any("non vedo il book" in s for s in env.said)
+
+
+def test_il_limite_di_perdita_non_chiude_le_posizioni_che_non_sono_del_bridge(env):
+    from hlbridge.schemas import OrderIntent, RiskVerdict
+    i = OrderIntent(asset="BTC", side="buy", notional_usd=1000, strategy_id="a mano", horizon_hours=0, reason="x")
+    env.adapter.execute(i, RiskVerdict(intent_id=i.id, decision="approve", approved_notional_usd=1000), 100.0)
+    env.write("DPB;NQ;0;0;FINE")
+    f = env.build()
+    f.step()
+    env.write("DPB;NQ;1;120;FINE")
+    f.step()
+    f.watch_risk()
+    env.state.day_start_equity = 400_000.0
+    f.watch_risk()
+    assert size(env) == 0                                            # il perp del bridge e' chiuso
+    btc = env.adapter.account_state().position("BTC")
+    assert btc is not None and btc.size != 0                         # l'altra posizione no

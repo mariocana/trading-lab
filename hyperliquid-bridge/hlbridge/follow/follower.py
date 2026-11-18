@@ -77,17 +77,26 @@ class Follower:
 
     def watch_risk(self) -> None:
         """Fold the account's equity into the risk state: daily loss and drawdown are only seen if
-        somebody looks while a position is open. A breach that asks to flatten flattens."""
+        somebody looks while a position is open. A breach that asks to flatten closes the perps this
+        bridge follows, and their orders. Not the rest of the account: a position the bridge did not
+        open is not its to close (the manual kill switch of the UI still flattens everything). The loss
+        is measured on the whole account, so another position's loss can still stop the bridge."""
         acc = self.adapter.account_state()
         fired = self.state.observe(acc.equity_usd, self.limits)
         if fired:
             self.notify(f"Rischio: {', '.join(fired)} ({self.state.halt_reason}).")
             self.journal("follow_risk", {"fired": fired, "halt_reason": self.state.halt_reason})
         if self.state.flatten_requested:
-            fills = self.adapter.flatten_all()
+            closed = []
+            for name in self.cfg.strategie:
+                perp = self._perp(name)
+                if self.adapter.close_position(perp, f"risk:{name}"):
+                    closed.append(perp)
+                self.adapter.cancel_asset_orders(perp)         # the stop of a closed position must not outlive it
             self.state.flatten_requested = False
-            self.notify(f"Chiuse {len(fills)} posizioni per il limite di perdita. Il bridge non apre finché non lo sblocchi.")
-            self.journal("follow_flatten", {"closed": len(fills)})
+            self.notify(f"Chiuse {len(closed)} posizioni del bridge ({', '.join(closed) or 'nessuna aperta'}) per il "
+                        "limite di perdita; il resto del conto non è toccato. Il bridge non apre finché non lo sblocchi.")
+            self.journal("follow_flatten", {"closed": closed})
         self.state.save()
 
     # ---- the start: look, don't chase ---------------------------------------
