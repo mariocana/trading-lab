@@ -22,12 +22,21 @@ file_illeggibile_secondi: 60
 # Sul testnet, dove il book di XYZ100 è largo il 16%, non basta: per la prova si alza.
 slittamento_max_bps: 20
 
-# Limiti di rischio di questo bridge, sopra config/limits.yaml (chiave per chiave). Il tetto di
-# limits.yaml per un perp HIP-3 è il 2% dell'equity: pensato per un book di molti nomi, una posizione
-# sola ci sbatte subito e il follower la riduce (e avvisa). Qui lo si alza per un bridge con una
-# strategia: scelta tua, non l'ho cambiata.
-limiti: {}
-#  max_notional_pct_equity: {hip3: 0.5}
+# Limiti di rischio di questo bridge, sopra config/limits.yaml (chiave per chiave).
+#
+# Il tetto per un perp HIP-3 era il 2% dell'equity: pensato per un book di molti nomi, per una posizione
+# sola vuol dire 0,02x di leva e il bridge copierebbe quasi niente. Ora è 1,0x l'equity.
+#
+# Perché 1,0x. Il tetto non decide quanto si compra (lo decide `scala`): è il soffitto sotto cui il rischio non
+# interviene. Con lo stop d'emergenza di DPB (120 punti su ~27.000, lo 0,44% del prezzo) un'uscita a stop costa
+# lo 0,44% dell'equity a 1x e l'1% a 2,3x. I freni a monte sono il 3% di perdita del giorno (niente nuove
+# aperture) e il 5% (chiude i perp del bridge): a 1x ci vogliono sei uscite a stop di fila per toccare il 3%,
+# a 2,3x tre. A 1x la liquidazione sta a una distanza che lo stop non raggiunge mai. Si alza per scelta, quando
+# i numeri del demo dicono che si può: non per far entrare la size.
+#
+# All'avvio `hlbridge follow` scrive quanto pesa un micro contro questo tetto, e se lo supera lo dice.
+limiti:
+  max_notional_pct_equity: {hip3: 1.0}
 
 # unita_per_micro: unità del perp per 1 micro. 1 MNQ vale $2 per punto e 1 unità di xyz:XYZ100 vale
 # $1 per punto dell'indice (il prezzo del perp è il livello dell'indice, 28.100 il 12/11/2026 contro

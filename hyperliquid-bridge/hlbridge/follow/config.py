@@ -57,3 +57,30 @@ def merge_limits(base: dict, over: dict) -> dict:
     for k, v in over.items():
         out[k] = merge_limits(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
     return out
+
+
+def exposure_lines(cfg: BridgeConfig, limits: dict, equity: float, prices: dict[str, float]) -> list[str]:
+    """What the bridge is going to ask for, against the cap that will cut it. Printed at start so a cut is
+    never a surprise: the number that matters is how many times the equity one micro of MultiCharts is."""
+    from hlbridge.schemas import asset_class
+
+    out = []
+    for name, s in cfg.strategie.items():
+        inst = cfg.strumenti[s.strumento]
+        px = prices.get(inst.perp)
+        if not px or equity <= 0:
+            out.append(f"{name}: prezzo o equity non disponibili, non so dire quanto pesa un micro")
+            continue
+        units = inst.unita_per_micro * cfg.scala
+        per_micro = units * px
+        cap_pct = limits["max_notional_pct_equity"][asset_class(inst.perp)]
+        cap_usd = cap_pct * equity
+        line = (f"{name}: 1 micro = {units:g} unità di {inst.perp} = ${per_micro:,.0f} = {per_micro / equity:.2f}x l'equity "
+                f"(${equity:,.0f}); tetto {cap_pct:.2f}x = ${cap_usd:,.0f}")
+        if per_micro > cap_usd:
+            line += (f". UN MICRO SUPERA IL TETTO: il rischio lo taglia a ${cap_usd:,.0f}. "
+                     f"Una scala di {cfg.scala * cap_usd / per_micro:.5f} porta un micro esattamente al tetto")
+        else:
+            line += f": ci stanno fino a {cap_usd / per_micro:.1f} micro, oltre il rischio taglia"
+        out.append(line)
+    return out

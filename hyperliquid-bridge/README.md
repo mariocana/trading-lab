@@ -96,9 +96,11 @@ di esecuzione il follower ordinava al prezzo del mainnet; ora non ordina se non 
 2. **La prova su testnet con `xyz:XYZ100`.** Cosa verificare: firma e asset id di un perp HIP-3, la lettura delle
    posizioni per dex, `cancel_asset_orders` (elenco ordini per dex), `market_close`, che il margine del dex
    sia finanziato, e che 0,1 unità superi il minimo d'ordine.
-3. **Limiti per strategia.** C'è la sezione `limiti` di `bridge.yaml`, vuota: il 2% dell'equity per un perp
-   HIP-3 di `limits.yaml` taglia una posizione sola, e il follower avvisa quando taglia. Il numero giusto lo
-   scegli tu.
+3. **Il tetto per un perp HIP-3** è 1,0x l'equity (era il 2%, che per una posizione sola vuol dire 0,02x), in
+   `limiti` di `bridge.yaml`, con il ragionamento scritto lì. Non decide quanto si compra, lo decide `scala`:
+   all'avvio `hlbridge follow` scrive quanto pesa un micro contro il tetto e, se lo supera, quale scala lo porta
+   al tetto. Su un conto da $1.000 la scala 0,05 di oggi è troppa (1 micro = $2.700): va abbassata. Il numero
+   si rivede quando il demo dà dei dati.
 4. **Un subaccount per strategia**, e un allarme quando il bridge non riesce a seguire MultiCharts (oggi avvisa
    dopo i tentativi falliti, non se il file smette di aggiornarsi).
 5. **`watch_risk` chiude solo i perp del bridge** (dal 18/11). Se la perdita del giorno supera il limite

@@ -63,7 +63,7 @@ def cmd_follow(args):
     import os
     import time
 
-    from hlbridge.follow.config import load_bridge, merge_limits
+    from hlbridge.follow.config import exposure_lines, load_bridge, merge_limits
     from hlbridge.follow.follower import Follower
     from hlbridge.pm.notify import notify
 
@@ -77,8 +77,15 @@ def cmd_follow(args):
             return adapter.venue.book_depth_10bps(perp)[0]
         except Exception:                                   # noqa: BLE001
             return None
-    f = Follower(cfg, adapter, market, merge_limits(load_limits(), cfg.limiti), st, folder,
-                 venue_mid=venue_mid if args.live else None)
+    limits = merge_limits(load_limits(), cfg.limiti)
+    f = Follower(cfg, adapter, market, limits, st, folder, venue_mid=venue_mid if args.live else None)
+    try:                                                    # what one micro weighs against the cap: say it before it cuts
+        ctxs = market.contexts()
+        prices = {p: (venue_mid(p) if args.live else None) or ctxs[p].mid_px for p in {i.perp for i in cfg.strumenti.values()} if p in ctxs}
+        for line in exposure_lines(cfg, limits, adapter.account_state().equity_usd, prices):
+            print(line)
+    except Exception as e:                                  # noqa: BLE001 - a start-up note must not stop the bridge
+        print(f"(non ho potuto calcolare quanto pesa un micro: {e!r})")
     print(f"bridge: {', '.join(cfg.strategie)} da {folder}, scala {cfg.scala}, "
           f"{'LIVE ' + ('testnet' if settings().testnet else 'MAINNET') if args.live else 'paper'}")
     last_marks = last_risk = 0.0

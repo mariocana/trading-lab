@@ -421,3 +421,28 @@ def test_il_buco_di_una_riscrittura_non_avvisa_e_un_secondo_buco_si(env):
     clock.t += 100
     f.step()                                                    # ...e cento secondi dopo e' ancora cosi'
     assert len([s for s in env.said if "non si legge" in s]) == 1
+
+
+def test_all_avvio_si_dice_quanto_pesa_un_micro_contro_il_tetto():
+    from hlbridge.follow.config import exposure_lines, merge_limits
+    from hlbridge.config import load_limits
+    c = cfg()
+    limits = merge_limits(load_limits(), {"max_notional_pct_equity": {"hip3": 1.0}})
+    (ok,) = exposure_lines(c, limits, 10_000.0, {PERP: 28_000.0})
+    assert "0.28x l'equity" in ok and "ci stanno fino a 3.6 micro" in ok and "SUPERA" not in ok
+    (troppo,) = exposure_lines(cfg(scala=0.5), limits, 10_000.0, {PERP: 28_000.0})
+    assert "UN MICRO SUPERA IL TETTO" in troppo and "Una scala di 0.17857" in troppo
+    (nulla,) = exposure_lines(c, limits, 10_000.0, {})
+    assert "non so dire" in nulla
+
+
+def test_la_config_vera_alza_il_tetto_hip3_e_il_micro_ci_sta():
+    from hlbridge.follow.config import exposure_lines, load_bridge, merge_limits
+    from hlbridge.config import load_limits
+    c = load_bridge()
+    limits = merge_limits(load_limits(), c.limiti)
+    assert limits["max_notional_pct_equity"]["hip3"] == 1.0 and limits["max_notional_pct_equity"]["crypto"] == 0.05
+    (riga,) = exposure_lines(c, limits, 10_000.0, {PERP: 28_000.0})
+    assert "SUPERA" not in riga
+    (piccolo,) = exposure_lines(c, limits, 1_000.0, {PERP: 28_000.0})      # un conto da $1.000 con scala 0.05: troppo
+    assert "UN MICRO SUPERA IL TETTO" in piccolo
