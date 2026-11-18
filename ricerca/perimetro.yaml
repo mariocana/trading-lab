@@ -38,7 +38,7 @@ mercati:
 destinazioni:
   prop:
     cosa: "una eval o un conto funded: conta passare, con piu tentativi"
-    errori_standard_min: 3.0                # eccesso / errore standard
+    errori_standard_min: 2.229              # eccesso / errore standard; era 3.0, abbassato da Mario il 18/11/2026 al t OOS citato dal corso (Live 002)
     dollari_al_giorno_per_micro_min: 10.0   # multicharts/docs/cosa_uccide_le_strategie.md: sotto non si parte
   live:
     cosa: "soldi propri, anche in demo: conta che l'edge regga nel tempo"
